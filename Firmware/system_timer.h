@@ -4,6 +4,31 @@
 #define FIRMWARE_SYSTEM_TIMER_H_
 
 #include "Arduino.h"
+
+/* 
+Rambo boards:
+- HEATER_BED -> PG5 -> OC0B -> Timer0
+- HEATER_END -> PE5 -> OC3C -> Timer3
+- AUTO_FAN   -> PH5 -> OC4C -> Timer4
+- FAN        -> PH3 -> OC4A -> Timer4
+
+MKS Base board:
+- HEATER_BED -> PH5 -> OC4C -> Timer4
+- HEATER_END -> PB4 -> OC2A -> Timer2
+- AUTO_FAN   -> PH4 -> OC4B -> Timer4
+- FAN        -> PH6 -> OC2B -> Timer2
+
++----------------------+--------+----------+
+| Timer usage          | Rambo  | MKS Base |
++----------------------+--------+----------+
+| Bed PWM              | timer0 | timer4   |
++----------------------+--------+----------+
+| millis, micro, delay | timer2 | timer2   |
++----------------------+--------+----------+
+| tone, auto fan       | timer4 | timer3   |
++----------------------+--------+----------+
+*/
+
 #define SYSTEM_TIMER_2
 
 #ifdef SYSTEM_TIMER_2

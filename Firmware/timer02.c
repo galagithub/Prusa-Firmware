@@ -10,6 +10,16 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+#if MOTHERBOARD == BOARD_MKS_BASE_1_3
+#define BED_PWM_TIMER4
+// timer0 auto disable
+ISR(TIMER0_OVF_vect)
+{
+	TIMSK0 &= ~(1 << TOIE0);
+	TCCR0B = 0x00;
+}
+#endif
+
 void timer0_init(void)
 {
 	//save sreg
@@ -17,6 +27,32 @@ void timer0_init(void)
 	//disable interrupts for sure
 	cli();
 
+#ifdef BED_PWM_TIMER4
+	// timer0 maight have been enabled already in wiring.c
+	{
+		TIMSK0 &= ~(1 << TOIE0);
+		TCCR0B = 0x00;
+	}
+	// this board uses OC4C for PWM output
+	TCNT4H  = 0;
+	TCNT4L  = 0;
+	// Fast PWM duty (0-255). 
+	// Due to invert mode (following rows) the duty is set to 255, which means zero all the time (bed not heating)
+	OCR4CH = 0;
+	OCR4CL = 255;
+	// Set fast PWM mode and inverting mode.
+	// +------+------+------+------+------+---------------------------------+--------+-------------------+-----------------+
+	// | Conf | Mode | WGM2 | WGM1 | WGM0 | Timer/Counter Mode of Operation |   TOP  | Update of OCRx at | TOV Flag Set on |
+	// +------+------+------+------+------+---------------------------------+--------+-------------------+-----------------+
+	// | Old  |   3  |   0  |   1  |   1  |        Fast PWM                 | 0xFF   |    BOTTOM (0x00)  |  MAX (0xFF)     |
+	// +------+------+------+------+------+---------------------------------+--------+-------------------+-----------------+
+	// | New  |   5  |   1  |   0  |   1  |        Fast PWM - 8bit          | 0x00FF |    BOTTOM (0x00)  |  MAX (0xFF)     |
+	// +------+------+------+------+------+---------------------------------+--------+-------------------+-----------------+
+
+	TCCR4A = (1 << WGM42) | (1 << WGM40) | (1 << COM4C1) | (1 << COM4C0);  
+	TCCR4B = (1 << CS41);    // CLK/8 prescaling
+	TIMSK4 |= (1 << TOIE4);  // enable timer overflow interrupt
+#else
 	TCNT0  = 0;
 	// Fast PWM duty (0-255). 
 	// Due to invert mode (following rows) the duty is set to 255, which means zero all the time (bed not heating)
@@ -25,6 +61,7 @@ void timer0_init(void)
 	TCCR0A = (1 << WGM01) | (1 << WGM00) | (1 << COM0B1) | (1 << COM0B0);  
 	TCCR0B = (1 << CS01);    // CLK/8 prescaling
 	TIMSK0 |= (1 << TOIE0);  // enable timer overflow interrupt
+#endif
 	
 	// Everything, that used to be on timer0 was moved to timer2 (delay, beeping, millis etc.)
 	//setup timer2

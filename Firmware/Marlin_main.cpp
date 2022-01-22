@@ -1012,7 +1012,9 @@ static void w25x20cl_err_msg()
 // are initialized by the main() routine provided by the Arduino framework.
 void setup()
 {
+#ifndef PRINTER_MMU_DISABLE
 	mmu_init();
+#endif
 
 	ultralcd_init();
 
@@ -1020,10 +1022,13 @@ void setup()
 
 	lcd_splash();
     Sound_Init();                                // also guarantee "SET_OUTPUT(BEEPER)"
-
+#ifdef HAS_SECOND_SERIAL_PORT 
 	selectedSerialPort = eeprom_read_byte((uint8_t *)EEPROM_SECOND_SERIAL_ACTIVE);
 	if (selectedSerialPort == 0xFF) selectedSerialPort = 0;
 	eeprom_update_byte((uint8_t *)EEPROM_SECOND_SERIAL_ACTIVE, selectedSerialPort);
+#else
+  selectedSerialPort = 0;
+#endif
 	MYSERIAL.begin(BAUDRATE);
 	fdev_setup_stream(uartout, uart_putchar, NULL, _FDEV_SETUP_WRITE); //setup uart out stream
 	stdout = uartout;
@@ -1489,11 +1494,13 @@ void setup()
 	}
 	//mbl_mode_init();
 	mbl_settings_init();
+#ifndef PRINTER_MMU_DISABLE
 	SilentModeMenu_MMU = eeprom_read_byte((uint8_t*)EEPROM_MMU_STEALTH);
 	if (SilentModeMenu_MMU == 255) {
 		SilentModeMenu_MMU = 1;
 		eeprom_write_byte((uint8_t*)EEPROM_MMU_STEALTH, SilentModeMenu_MMU);
 	}
+#endif
 
 #if !defined(DEBUG_DISABLE_FANCHECK) && defined(FANCHECK) && defined(TACH_1) && TACH_1 >-1
 	setup_fan_interrupt();
@@ -1639,7 +1646,9 @@ void setup()
 #endif //UVLO_SUPPORT
 
   fCheckModeInit();
+#ifndef PRINTER_MMU_DISABLE
   fSetMmuMode(mmu_enabled);
+#endif
   KEEPALIVE_STATE(NOT_BUSY);
 #ifdef WATCHDOG
   wdt_enable(WDTO_4S);
@@ -1900,7 +1909,9 @@ void loop()
 		}
 	}
 #endif //TMC2130
+#ifndef PRINTER_MMU_DISABLE
 	mmu_loop();
+#endif
 }
 
 #define DEFINE_PGM_READ_ANY(type, reader)       \
@@ -3087,7 +3098,7 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 //#ifndef NEW_XYZCAL
 				if (result >= 0)
 				{
-					#ifdef HEATBED_V2
+					#if defined(HEATBED_V2) || defined(NEW_XYZCAL)
 					sample_z();
 					#else //HEATBED_V2
 					point_too_far_mask = 0;
@@ -3713,8 +3724,10 @@ void process_commands()
   KEEPALIVE_STATE(IN_HANDLER);
 
 #ifdef SNMM
+#if MOTHERBOARD == BOARD_RAMBO_MINI_1_0 || MOTHERBOARD == BOARD_RAMBO_MINI_1_3
   float tmp_motor[3] = DEFAULT_PWM_MOTOR_CURRENT;
   float tmp_motor_loud[3] = DEFAULT_PWM_MOTOR_CURRENT_LOUD;
+#endif
   int8_t SilentMode;
 #endif
   /*!
@@ -3913,11 +3926,13 @@ void process_commands()
 		{
                eeprom_update_byte((uint8_t*)EEPROM_UVLO,0); 
                enquecommand_P(PSTR("M24")); 
-		}	
+		}
+#ifndef PRINTER_MMU_DISABLE
 		else if (code_seen("MMURES")) // PRUSA MMURES
 		{
 			mmu_reset();
 		}
+#endif
 		else if (code_seen("RESET")) { // PRUSA RESET
             // careful!
             if (farm_mode) {
@@ -5038,7 +5053,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 		bool magnet_elimination = (eeprom_read_byte((uint8_t*)EEPROM_MBL_MAGNET_ELIMINATION) > 0);
 		
 #ifndef PINDA_THERMISTOR
-		if (run == false && temp_cal_active == true && calibration_status_pinda() == true && target_temperature_bed >= 50)
+		if (run == false && eeprom_read_byte((unsigned char *)EEPROM_TEMP_CAL_ACTIVE) == true && calibration_status_pinda() == true && target_temperature_bed >= 50)
 		{
 			temp_compensation_start();
 			run = true;
@@ -5260,7 +5275,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 //		SERIAL_ECHOLNPGM("clean up finished ");
 
 #ifndef PINDA_THERMISTOR
-		if(temp_cal_active == true && calibration_status_pinda() == true) temp_compensation_apply(); //apply PINDA temperature compensation
+		if(eeprom_read_byte((unsigned char *)EEPROM_TEMP_CAL_ACTIVE) == true && calibration_status_pinda() == true) temp_compensation_apply(); //apply PINDA temperature compensation
 #endif
 		babystep_apply(); // Apply Z height correction aka baby stepping before mesh bed leveing gets activated.
 //		SERIAL_ECHOLNPGM("babystep applied");

@@ -8009,8 +8009,25 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 	_travel = _travel + (_travel / 10);
 
 	if (_axis == X_AXIS) {
-		current_position[Z_AXIS] += 17;
+		current_position[Z_AXIS] += 20;
+		current_position[Y_AXIS] += 5;
+		current_position[X_AXIS] += 5;
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
+	}	
+	if (_axis == Y_AXIS) {
+		current_position[X_AXIS] += 20;
+		current_position[Z_AXIS] += 5;
+		current_position[Y_AXIS] += 5;
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
+	}	
+	if (_axis == Z_AXIS) {
+		current_position[X_AXIS] += 20;
+		current_position[Y_AXIS] += 5;
+		current_position[Z_AXIS] += 5;
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
 	}
 
 	do {
@@ -8018,31 +8035,31 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
 		st_synchronize();
-#ifdef TMC2130
-		if ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-#else //TMC2130
+//#ifndef TMC2130
+//		if ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
+//#else //TMC2130
 		if ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) ||
 			(READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) ||
 			(READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-#endif //TMC2130
+//#endif //TMC2130
 		{
 			if (_axis == 0)
 			{
-				_stepresult = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
-
+				_stepresult = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
+	printf_P(PSTR("lcd_selfcheck_axis X %d, %d\n"), _stepresult, _err_endstop);
 			}
 			if (_axis == 1)
 			{
-				_stepresult = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
-
+				_stepresult = ((READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
+	printf_P(PSTR("lcd_selfcheck_axis Y %d, %d\n"), _stepresult, _err_endstop);
 			}
 			if (_axis == 2)
 			{
-				_stepresult = ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
-	printf_P(PSTR("lcd_selfcheck_axis %d, %d\n"), _stepresult, _err_endstop);
+				_stepresult = ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
+	printf_P(PSTR("lcd_selfcheck_axis Z %d, %d\n"), _stepresult, _err_endstop);
 				/*disable_x();
 				disable_y();
 				disable_z();*/
@@ -8103,8 +8120,13 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 
 static bool lcd_selfcheck_pulleys(int axis)
 {
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 	float tmp_motor_loud[3] = DEFAULT_PWM_MOTOR_CURRENT_LOUD;
 	float tmp_motor[3] = DEFAULT_PWM_MOTOR_CURRENT;
+#else
+	float tmp_motor_loud[3] = {0,0,0};
+	float tmp_motor[3] = {0,0,0};
+#endif
 	float current_position_init;
 	float move;
 	bool endstop_triggered = false;
@@ -8118,15 +8140,17 @@ static bool lcd_selfcheck_pulleys(int axis)
 
 	current_position_init = current_position[axis];
 
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 	current_position[axis] += 2;
 	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
 	for (i = 0; i < 5; i++) {
 		refresh_cmd_timeout();
 		current_position[axis] = current_position[axis] + move;
 		st_current_set(0, 850); //set motor current higher
 		plan_buffer_line_curposXYZE(200);
 		st_synchronize();
-          if (SilentModeMenu != SILENT_MODE_OFF) st_current_set(0, tmp_motor[0]); //set back to normal operation currents
+        if (SilentModeMenu != SILENT_MODE_OFF) st_current_set(0, tmp_motor[0]); //set back to normal operation currents
 		else st_current_set(0, tmp_motor_loud[0]); //set motor current back			
 		current_position[axis] = current_position[axis] - move;
 		plan_buffer_line_curposXYZE(50);
@@ -8137,6 +8161,7 @@ static bool lcd_selfcheck_pulleys(int axis)
 			return(false);
 		}
 	}
+#endif
 	timeout_counter = _millis() + 2500;
 	endstop_triggered = false;
 	manage_inactivity(true);

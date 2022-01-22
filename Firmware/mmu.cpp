@@ -80,7 +80,6 @@ uint32_t mmu_last_response = 0;
 MmuCmd mmu_last_cmd = MmuCmd::None;
 uint16_t mmu_power_failures = 0;
 
-
 #ifdef MMU_DEBUG
 static const auto DEBUG_PUTCHAR = putchar;
 static const auto DEBUG_PUTS_P = puts_P;
@@ -118,6 +117,7 @@ int mmu_puts_P(const char* str)
 //send command - printf
 int mmu_printf_P(const char* format, ...)
 {
+#ifndef PRINTER_MMU_DISABLE
 	va_list args;
 	va_start(args, format);
 	mmu_clr_rx_buf();                          //clear rx buffer
@@ -125,27 +125,39 @@ int mmu_printf_P(const char* format, ...)
 	va_end(args);
 	mmu_last_request = _millis();
 	return r;
+#else
+	return 0;
+#endif
 }
 
 //check 'ok' response
 int8_t mmu_rx_ok(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 	int8_t res = uart2_rx_str_P(PSTR("ok\n"));
 	if (res == 1) mmu_last_response = _millis();
 	return res;
+#else
+	return 0;
+#endif
 }
 
 //check 'start' response
 int8_t mmu_rx_start(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 	int8_t res = uart2_rx_str_P(PSTR("start\n"));
 	if (res == 1) mmu_last_response = _millis();
 	return res;
+#else
+	return 0;
+#endif
 }
 
 //initialize mmu2 unit - first part - should be done at begining of startup process
 void mmu_init(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 #ifdef MMU_HWRESET
 	digitalWrite(MMU_RST_PIN, HIGH);
 	pinMode(MMU_RST_PIN, OUTPUT);              //setup reset pin
@@ -154,6 +166,7 @@ void mmu_init(void)
 	_delay_ms(10);                             //wait 10ms for sure
 	mmu_reset();                               //reset mmu (HW or SW), do not wait for response
 	mmu_state = S::Init;
+#endif
 	SET_INPUT(IR_SENSOR_PIN); //input mode
 	WRITE(IR_SENSOR_PIN, 1); //pullup
 }
@@ -197,6 +210,9 @@ static bool activate_stealth_mode()
 //mmu main loop - state machine processing
 void mmu_loop(void)
 {
+#ifdef PRINTER_MMU_DISABLE
+	return;
+#endif
 	static uint8_t mmu_attempt_nr = 0;
 //	printf_P(PSTR("MMU loop, state=%d\n"), mmu_state);
 	switch (mmu_state)
@@ -487,12 +503,14 @@ void mmu_loop(void)
 
 void mmu_reset(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 #ifdef MMU_HWRESET                             //HW - pulse reset pin
 	digitalWrite(MMU_RST_PIN, LOW);
 	_delay_us(100);
 	digitalWrite(MMU_RST_PIN, HIGH);
 #else                                          //SW - send X0 command
     mmu_puts_P(PSTR("X0\n"));
+#endif
 #endif
 }
 

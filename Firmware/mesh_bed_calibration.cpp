@@ -985,13 +985,13 @@ inline bool find_bed_induction_sensor_point_z(float minimum_z, uint8_t n_iter, i
 		go_to_current(homing_feedrate[Z_AXIS]/60);
 		// Move back down slowly to find bed.
         current_position[Z_AXIS] = minimum_z;
-		//printf_P(PSTR("init Z = %f, min_z = %f, i = %d\n"), z_bckp, minimum_z, i);
+		printf_P(PSTR("init Z = %f, min_z = %f, i = %d\n"), z_bckp, minimum_z, i);
         go_to_current(homing_feedrate[Z_AXIS]/(4*60));
         // we have to let the planner know where we are right now as it is not where we said to go.
         update_current_position_z();
-		//printf_P(PSTR("Zs: %f, Z: %f, delta Z: %f"), z_bckp, current_position[Z_AXIS], (z_bckp - current_position[Z_AXIS]));
+		printf_P(PSTR("Zs: %f, Z: %f, delta Z: %f\n"), z_bckp, current_position[Z_AXIS], (z_bckp - current_position[Z_AXIS]));
 		if (abs(current_position[Z_AXIS] - z_bckp) < 0.025) {
-			//printf_P(PSTR("PINDA triggered immediately, move Z higher and repeat measurement\n")); 
+			printf_P(PSTR("PINDA triggered immediately, move Z higher and repeat measurement\n")); 
 			current_position[Z_AXIS] += 0.5;
 			go_to_current(homing_feedrate[Z_AXIS]/60);
 			current_position[Z_AXIS] = minimum_z;
@@ -1004,7 +1004,7 @@ inline bool find_bed_induction_sensor_point_z(float minimum_z, uint8_t n_iter, i
 
 		if (!endstop_z_hit_on_purpose())
 		{
-			//printf_P(PSTR("i = %d, endstop not hit 2, current_pos[Z]: %f \n"), i, current_position[Z_AXIS]);
+			printf_P(PSTR("i = %d, endstop not hit 2, current_pos[Z]: %f \n"), i, current_position[Z_AXIS]);
 			goto error;
 		}
 #ifdef TMC2130
@@ -2775,7 +2775,9 @@ bool sample_z() {
 	go_to_current(homing_feedrate[Z_AXIS] / 60);
 	//plan_buffer_line_curposXYZE(feedrate, active_extruder););
 
+#ifndef HEATBED_V2
 	lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
+#endif
 
 	// Sample Z heights for the mesh bed leveling.
 	// In addition, store the results into an eeprom, to be used later for verification of the bed leveling process.
@@ -2994,6 +2996,7 @@ bool scan_bed_induction_points(int8_t verbosity_level)
         if (current_position[Y_AXIS] < Y_MIN_POS_FOR_BED_CALIBRATION)
             current_position[Y_AXIS] = Y_MIN_POS_FOR_BED_CALIBRATION;
         go_to_current(homing_feedrate[X_AXIS]/60);
+        printf_P(_N("Mesh point %d: x=%f, y=%f\n"),mesh_point, bedX, bedY);
         find_bed_induction_sensor_point_z();
 		scan_bed_induction_sensor_point();
     }
