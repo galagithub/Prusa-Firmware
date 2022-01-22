@@ -8,11 +8,11 @@ GENERAL SETTINGS
 *------------------------------------*/
 
 // Printer revision
-#define PRINTER_TYPE PRINTER_MK2
-#define PRINTER_NAME PRINTER_MK2_NAME
+#define PRINTER_TYPE PRINTER_MK2S
+#define PRINTER_NAME PRINTER_MK2S_NAME
 #define PRINTER_MMU_DISABLE
-#define PRINTER_MMU_TYPE PRINTER_MK2              // dummy item (due to successfully compilation / building only)
-#define PRINTER_MMU_NAME PRINTER_MK2_NAME         // dummy item (due to successfully compilation / building only)
+#define PRINTER_MMU_TYPE PRINTER_MK2S              // dummy item (due to successfully compilation / building only)
+#define PRINTER_MMU_NAME PRINTER_MK2S_NAME         // dummy item (due to successfully compilation / building only)
 #define FILAMENT_SIZE "1_75mm_MK2"
 #define NOZZLE_TYPE "E3Dv6full"
 
@@ -20,7 +20,7 @@ GENERAL SETTINGS
 //#define DEVELOPER
 
 // Printer name
-#define CUSTOM_MENDEL_NAME "Orballo i3 MK2"
+#define CUSTOM_MENDEL_NAME "Orballo i3 MK2S"
 
 // Electronics
 #define MOTHERBOARD BOARD_MKS_BASE_1_3
@@ -34,6 +34,8 @@ GENERAL SETTINGS
 //#define E3D_PT100_BED_WITH_AMP
 //#define E3D_PT100_BED_NO_AMP
 
+// define frame
+#define ORBALLO_P3STEEL
 
 /*------------------------------------
 AXIS SETTINGS
@@ -44,8 +46,8 @@ AXIS SETTINGS
 // X,Y 20 teeth
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,3200/8,140}
 #else
-// X,Y 20 teeth
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,3200/8,161.3}
+// X 16 theeth,Y 20 teeth
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {100,80,3200/8,161.3}
 #endif
 
 

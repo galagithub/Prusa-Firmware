@@ -2156,6 +2156,10 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(_i("forum.prusa3d.com"));////MSG_PRUSA3D_FORUM
   MENU_ITEM_BACK_P(_i("howto.prusa3d.com"));////MSG_PRUSA3D_HOWTO
   MENU_ITEM_BACK_P(STR_SEPARATOR);
+//#if !defined(PRINTER_MK2)&&!defined(PRINTER_MK2S)&&!defined(PRINTER_MK25)&&!defined(PRINTER_MK25S)&&!defined(PRINTER_MK3)&&!defined(PRINTER_MK3S)
+  MENU_ITEM_BACK_P(_i("Compatible printer"));////clone or compatible printer
+  MENU_ITEM_BACK_P(STR_SEPARATOR);
+//#endif
   MENU_ITEM_BACK_P(PSTR(FILAMENT_SIZE));
   MENU_ITEM_BACK_P(PSTR(ELECTRONICS));
   MENU_ITEM_BACK_P(PSTR(NOZZLE_TYPE));
@@ -3511,7 +3515,7 @@ bool lcd_calibrate_z_end_stop_manual(bool only_z)
 calibrated:
     // Let the machine think the Z axis is a bit higher than it is, so it will not home into the bed
     // during the search for the induction points.
-	if ((PRINTER_TYPE == PRINTER_MK25) || (PRINTER_TYPE == PRINTER_MK2) || (PRINTER_TYPE == PRINTER_MK2_SNMM)) {
+	if ((PRINTER_TYPE == PRINTER_MK25) || (PRINTER_TYPE == PRINTER_MK2) || (PRINTER_TYPE == PRINTER_MK25S) || (PRINTER_TYPE == PRINTER_MK2S) || (PRINTER_TYPE == PRINTER_MK2_SNMM)) {
 		current_position[Z_AXIS] = Z_MAX_POS-3.f;
 	}
 	else {
@@ -5056,8 +5060,10 @@ void lcd_wizard(WizState state)
 			lcd_show_fullscreen_message_and_wait_P(_i("Please remove shipping helpers first."));
 			lcd_show_fullscreen_message_and_wait_P(_i("Now remove the test print from steel sheet."));
 			lcd_show_fullscreen_message_and_wait_P(_i("I will run z calibration now."));////MSG_WIZARD_Z_CAL c=20 r=8
+#ifdef STEEL_SHEET
 			wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 			if (!wizard_event) lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
+#endif
 			wizard_event = gcode_M45(true, 0);
 			if (wizard_event) {
 				//current filament needs to be unloaded and then new filament should be loaded
@@ -5125,7 +5131,9 @@ void lcd_wizard(WizState state)
 			}
 			else
 			{
+#ifdef STEEL_SHEET
 			    lcd_show_fullscreen_message_and_wait_P(_i("If you have additional steel sheets, calibrate their presets in Settings - HW Setup - Steel sheets."));
+#endif
 				state = S::Finish;
 			}
 			break;
@@ -5735,8 +5743,9 @@ void lcd_hw_setup_menu(void)                      // can not be "static"
 
     MENU_BEGIN();
     MENU_ITEM_BACK_P(_T(bSettings?MSG_SETTINGS:MSG_BACK)); // i.e. default menu-item / menu-item after checking mismatch
-
+#ifdef STEEL_SHEET
     MENU_ITEM_SUBMENU_P(_i("Steel sheets"), sheets_menu); ////MSG_STEEL_SHEETS c=18
+#endif
     SETTINGS_NOZZLE;
     MENU_ITEM_SUBMENU_P(_i("Checks"), lcd_checking_menu);
 
@@ -5773,9 +5782,13 @@ static void lcd_settings_menu()
 
 	SETTINGS_CUTTER;
 
+#ifdef FAN_CHECK
 	MENU_ITEM_TOGGLE_P(_i("Fans check"), fans_check_enabled ? _T(MSG_ON) : _T(MSG_OFF), lcd_set_fan_check);
+#endif
 
+#if defined(TMC2130) || defined(MOTOR_CURRENT_PWM_XY_PIN)
 	SETTINGS_SILENT_MODE;
+#endif
 
     if(!farm_mode)
     {
@@ -7184,10 +7197,12 @@ static void lcd_tune_menu()
 
 	SETTINGS_CUTTER;
 
+#ifdef FAN_CHECK
      if(farm_mode)
      {
        MENU_ITEM_TOGGLE_P(_i("Fans check"), fans_check_enabled ? _T(MSG_ON) : _T(MSG_OFF), lcd_set_fan_check);
      }
+#endif
 
 #ifdef TMC2130
      if(!farm_mode)
@@ -7203,6 +7218,7 @@ static void lcd_tune_menu()
           else MENU_ITEM_TOGGLE_P(_T(MSG_CRASHDETECT), NULL, lcd_crash_mode_info);
      }
 #else //TMC2130
+#if defined(MOTOR_CURRENT_PWM_XY_PIN)
 	if (!farm_mode) { //dont show in menu if we are in farm mode
 		switch (SilentModeMenu) {
 		case SILENT_MODE_POWER: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_HIGH_POWER), lcd_silent_mode_set); break;
@@ -7211,6 +7227,7 @@ static void lcd_tune_menu()
 		default: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_HIGH_POWER), lcd_silent_mode_set); break; // (probably) not needed
 		}
 	}
+#endif
 #endif //TMC2130
 	SETTINGS_MMU_MODE;
     SETTINGS_SOUND;
@@ -7708,9 +7725,6 @@ bool lcd_selftest()
 #endif //TMC2130
 	}
 
-
-
-
 	if (_result)
 	{
 		_progress = lcd_selftest_screen(TestScreen::AxisX, _progress, 3, true, 0);
@@ -7719,7 +7733,6 @@ bool lcd_selftest()
 		_result = lcd_selfcheck_pulleys(X_AXIS);
 #endif
 	}
-
 
 	if (_result)
 	{
@@ -7731,6 +7744,7 @@ bool lcd_selftest()
 #endif // TMC2130
 	}
 
+
 	if (_result)
 	{
 		_progress = lcd_selftest_screen(TestScreen::AxisZ, _progress, 3, true, 0);
@@ -7738,7 +7752,6 @@ bool lcd_selftest()
 		_result = lcd_selfcheck_pulleys(Y_AXIS);
 #endif // TMC2130
 	}
-
 
 	if (_result)
 	{
@@ -8009,25 +8022,8 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 	_travel = _travel + (_travel / 10);
 
 	if (_axis == X_AXIS) {
-		current_position[Z_AXIS] += 20;
-		current_position[Y_AXIS] += 5;
-		current_position[X_AXIS] += 5;
+		current_position[Z_AXIS] += 17;
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
-		st_synchronize();
-	}	
-	if (_axis == Y_AXIS) {
-		current_position[X_AXIS] += 20;
-		current_position[Z_AXIS] += 5;
-		current_position[Y_AXIS] += 5;
-		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
-		st_synchronize();
-	}	
-	if (_axis == Z_AXIS) {
-		current_position[X_AXIS] += 20;
-		current_position[Y_AXIS] += 5;
-		current_position[Z_AXIS] += 5;
-		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
-		st_synchronize();
 	}
 
 	do {
@@ -8035,30 +8031,25 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
 		st_synchronize();
-//#ifndef TMC2130
-//		if ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-//#else //TMC2130
-		if ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) ||
-			(READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) ||
-			(READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-//#endif //TMC2130
+#ifdef TMC2130
+		if ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING))
 		{
 			if (_axis == 0)
 			{
-				_stepresult = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
+				_stepresult = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
 	printf_P(PSTR("lcd_selfcheck_axis X %d, %d\n"), _stepresult, _err_endstop);
 			}
 			if (_axis == 1)
 			{
-				_stepresult = ((READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
+				_stepresult = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
 	printf_P(PSTR("lcd_selfcheck_axis Y %d, %d\n"), _stepresult, _err_endstop);
 			}
 			if (_axis == 2)
 			{
-				_stepresult = ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
-				_err_endstop = ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
+				_stepresult = ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+				_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
 	printf_P(PSTR("lcd_selfcheck_axis Z %d, %d\n"), _stepresult, _err_endstop);
 				/*disable_x();
 				disable_y();
@@ -8066,6 +8057,33 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 			}
 			_stepdone = true;
 		}
+#else //TMC2130
+		if ((_axis == 0) && (READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis X %d, %d\n"), _stepresult, _err_endstop);
+		}
+		if ((_axis == 1) && (READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis Y %d, %d\n"), _stepresult, _err_endstop);
+		}
+		if ((_axis == 2) && (READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis Z %d, %d\n"), _stepresult, _err_endstop);
+			/*disable_x();
+			disable_y();
+			disable_z();*/
+		}
+#endif //TMC2130
+		
 
 		if (_lcd_refresh < 6)
 		{
@@ -8198,7 +8216,14 @@ static bool lcd_selfcheck_pulleys(int axis)
 static bool lcd_selfcheck_endstops()
 {
 	bool _result = true;
+/*#ifndef TMC2130
+	current_position[X_AXIS] = current_position[X_AXIS] + 5;
+	current_position[Y_AXIS] = current_position[Y_AXIS] + 5;
+	current_position[Z_AXIS] = current_position[Z_AXIS] + 5;
 
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+#endif*/
 	if (
 	#ifndef TMC2130
 		((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ||
@@ -8207,13 +8232,14 @@ static bool lcd_selfcheck_endstops()
 		((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1))
 	{
 	#ifndef TMC2130
-		if ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) current_position[0] += 10;
-		if ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) current_position[1] += 10;
+		if ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) current_position[0] += 20;
+		if ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) current_position[1] += 20;
 	#endif //!TMC2130
-		if ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) current_position[2] += 10;
+		if ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) current_position[2] += 20;
+
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
 	}
-	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
-	st_synchronize();
 
 	if (
 	#ifndef TMC2130

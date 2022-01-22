@@ -2776,7 +2776,9 @@ bool sample_z() {
 	//plan_buffer_line_curposXYZE(feedrate, active_extruder););
 
 #ifndef HEATBED_V2
+#ifdef STEEL_SHEET
 	lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
+#endif
 #endif
 
 	// Sample Z heights for the mesh bed leveling.

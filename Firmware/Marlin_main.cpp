@@ -2989,8 +2989,17 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 	home_xy();
 
 	enable_endstops(false);
+#ifdef HEATBED_V2
 	current_position[X_AXIS] += 5;
 	current_position[Y_AXIS] += 5;
+#endif
+#ifdef ORBALLO_P3STEEL
+	current_position[X_AXIS] += 14; // 11
+	current_position[Y_AXIS] += -2; // -3
+#else
+  current_position[X_AXIS] += 5; // 11
+	current_position[Y_AXIS] += 5; // -3
+#endif
 	plan_buffer_line_curposXYZE(homing_feedrate[Z_AXIS] / 40);
 	st_synchronize();
 
@@ -3138,6 +3147,16 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 		else
 		{
 			lcd_show_fullscreen_message_and_wait_P(PSTR("Calibration failed! Check the axes and run again."));
+      lcd_clear();
+      lcd_set_cursor(0, 0);
+      lcd_puts_P(PSTR("  Z Axis measures  "));
+      lcd_set_cursor(0, 1);
+      menu_draw_float31(PSTR("Z:"),st_get_position_mm(Z_AXIS));
+      lcd_set_cursor(0, 2);
+      menu_draw_float31(PSTR("<:"),(MESH_HOME_Z_SEARCH + HOME_Z_SEARCH_THRESHOLD));
+      lcd_set_cursor(0, 3);
+      menu_draw_float31(PSTR(">:"),(MESH_HOME_Z_SEARCH - HOME_Z_SEARCH_THRESHOLD));
+      lcd_wait_for_click_delay(MSG_BED_LEVELING_FAILED_TIMEOUT);
 			final_result = false;
 		}
 	}
