@@ -4654,7 +4654,7 @@ void lcd_second_serial_set() {
 #endif //HAS_SECOND_SERIAL_PORT
 
 void lcd_calibrate_pinda() {
-	enquecommand_P(PSTR("G76"));
+	enquecommand_P(PSTR("G76 H"));
 	lcd_return_to_status();
 }
 

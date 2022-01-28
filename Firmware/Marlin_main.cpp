@@ -4781,6 +4781,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 
         }
 #endif
+        bool use_hotend = code_seen("H");
         if ((current_temperature_pinda > 35) && (farm_mode == false)) {
             //waiting for PIDNA probe to cool down in case that we are not in farm mode
             current_position[Z_AXIS] = 100;
@@ -4801,7 +4802,8 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         if (start_temp < current_temperature_pinda) start_temp += 5;
         printf_P(_N("start temperature: %.1f\n"), start_temp);
 
-//			setTargetHotend(200, 0);
+        if (use_hotend)
+  			  setTargetHotend(200, 0);
         setTargetBed(70 + (start_temp - 30));
 
         custom_message_type = CustomMsg::TempCal;
@@ -4816,10 +4818,23 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         plan_buffer_line_curposXYZE(3000 / 60);
         st_synchronize();
 
+        LongTimer pinda_timeout;
+        bool target_temp_reached=true;
+        pinda_timeout.start();
         while (current_temperature_pinda < start_temp)
         {
             delay_keep_alive(1000);
             serialecho_temperatures();
+            if (pinda_timeout.expired(2 * 8 * 60 * 1000ul)) { //wait 14 minutes
+              target_temp_reached = false;
+              break;
+            }
+        }
+        pinda_timeout.stop();
+        if(target_temp_reached == false)
+        {
+          lcd_setstatuspgm(_i("FAIL t. cal."));
+          break;
         }
 
         eeprom_update_byte((uint8_t*)EEPROM_CALIBRATION_STATUS_PINDA, 0); //invalidate temp. calibration in case that in will be aborted during the calibration process
@@ -4854,7 +4869,8 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             printf_P(_N("\nStep: %d/6\n"), i + 2);
             custom_message_state = i + 2;
             setTargetBed(50 + 10 * (temp - 30) / 5);
-//				setTargetHotend(255, 0);
+            if (use_hotend)
+      				setTargetHotend(200, 0);
             current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
             plan_buffer_line_curposXYZE(3000 / 60);
             current_position[X_AXIS] = PINDA_PREHEAT_X;
@@ -4863,10 +4879,21 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             current_position[Z_AXIS] = PINDA_PREHEAT_Z;
             plan_buffer_line_curposXYZE(3000 / 60);
             st_synchronize();
-            while (current_temperature_pinda < temp)
+            pinda_timeout.start();
+            while (current_temperature_pinda < start_temp)
             {
                 delay_keep_alive(1000);
                 serialecho_temperatures();
+                if (pinda_timeout.expired(2 * 8 * 60 * 1000ul)) { //wait 14 minutes
+                  target_temp_reached = false;
+                  break;
+                }
+            }
+            pinda_timeout.stop();
+            if(target_temp_reached == false)
+            {
+              lcd_setstatuspgm(_i("FAIL t. cal."));
+              break;
             }
             current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
             plan_buffer_line_curposXYZE(3000 / 60);
@@ -4886,7 +4913,8 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             EEPROM_save_B(EEPROM_PROBE_TEMP_SHIFT + i * 2, &z_shift);
 
         }
-        lcd_temp_cal_show_result(true);
+        if(target_temp_reached == true)
+          lcd_temp_cal_show_result(true);
 
 #else //PINDA_THERMISTOR
 
