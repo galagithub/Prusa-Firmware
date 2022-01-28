@@ -34,9 +34,6 @@ GENERAL SETTINGS
 //#define E3D_PT100_BED_WITH_AMP
 //#define E3D_PT100_BED_NO_AMP
 
-// define frame
-#define ORBALLO_P3STEEL
-
 /*------------------------------------
 AXIS SETTINGS
 *------------------------------------*/
@@ -75,8 +72,8 @@ AXIS SETTINGS
 #define X_MAX_POS 250
 #define X_MIN_POS -3.0
 #define Y_MAX_POS 210
-#define Y_MIN_POS -4.0
-#define Z_MAX_POS 210
+#define Y_MIN_POS -5.0
+#define Z_MAX_POS 205
 #define Z_MIN_POS 0.15
 
 // Canceled home position

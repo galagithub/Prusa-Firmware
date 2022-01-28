@@ -130,6 +130,7 @@ static void lcd_tune_menu();
 //static void lcd_move_menu();
 static void lcd_settings_menu();
 static void lcd_calibration_menu();
+static void lcd_troubleshoot_menu();
 static void lcd_control_temperature_menu();
 static void lcd_settings_linearity_correction_menu_save();
 static void prusa_stat_printerstatus(int _status);
@@ -4800,8 +4801,13 @@ void lcd_first_layer_calibration_reset()
     eeprom_read_block(sheet_name, &EEPROM_Sheets_base->s[(eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet)))].name, sizeof(Sheet::name));
     lcd_set_cursor(0, 0);
     float offset = static_cast<int16_t>(eeprom_read_word(reinterpret_cast<uint16_t*>(&EEPROM_Sheets_base->s[(eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet)))].z_offset)))/cs.axis_steps_per_unit[Z_AXIS];
+#ifdef STEEL_SHEET
     lcd_printf_P(_i("Sheet %.7s\nZ offset: %+1.3f mm\n%cContinue\n%cStart from zero"), //// \n denotes line break, %.7s is replaced by 7 character long sheet name, %+1.3f is replaced by 6 character long floating point number, %c is replaced by > or white space (one character) based on whether first or second option is selected. % denoted place holders can not be reordered. r=4
             sheet_name, offset, menuData->reset ? ' ' : '>', menuData->reset ? '>' : ' ');
+#else
+    lcd_printf_P(_i("Print bed\nZ offset: %+1.3f mm\n%cContinue\n%cStart from zero"), //// \n denotes line break, %.7s is replaced by 7 character long sheet name, %+1.3f is replaced by 6 character long floating point number, %c is replaced by > or white space (one character) based on whether first or second option is selected. % denoted place holders can not be reordered. r=4
+            offset, menuData->reset ? ' ' : '>', menuData->reset ? '>' : ' ');
+#endif
 
 }
 
@@ -5920,6 +5926,185 @@ static void lcd_calibration_menu()
   MENU_END();
 }
 
+#ifndef HEATBEAD_V2
+/*
+static const float y0 = MESH_MIN_Y;
+static const float y1 = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y);
+static const float y2 = MESH_MAX_Y;
+
+static const float x0 = MESH_MIN_X;
+static const float x1 = 0.5f * float(MESH_MIN_X + MESH_MAX_X);
+static const float x2 = MESH_MAX_X;
+*/
+
+static void mbl_cal_row1_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X;
+	current_position[Y_AXIS] = MESH_MIN_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+
+static void mbl_cal_row2_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X;
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X;
+	current_position[Y_AXIS] = MESH_MAX_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+static void mbl_cal_row1_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X);
+	current_position[Y_AXIS] = MESH_MIN_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row2_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X);
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X);
+	current_position[Y_AXIS] = MESH_MAX_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+static void mbl_cal_row1_col3()
+{
+    current_position[X_AXIS] = MESH_MIN_X;
+	current_position[Y_AXIS] = MESH_MAX_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row2_col3()
+{
+    current_position[X_AXIS] = MESH_MAX_X;
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col3()
+{
+    current_position[X_AXIS] = MESH_MAX_X;
+	current_position[Y_AXIS] = MESH_MAX_Y;
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+
+static void xyz_cal_point1()
+{
+    current_position[X_AXIS] = bed_ref_points_4[0];
+	current_position[Y_AXIS] = bed_ref_points_4[1];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point2()
+{
+    current_position[X_AXIS] = bed_ref_points_4[2];
+	current_position[Y_AXIS] = bed_ref_points_4[3];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point3()
+{
+    current_position[X_AXIS] = bed_ref_points_4[4];
+	current_position[Y_AXIS] = bed_ref_points_4[5];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point4()
+{
+    current_position[X_AXIS] = bed_ref_points_4[6];
+	current_position[Y_AXIS] = bed_ref_points_4[7];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void lcd_mbl_cal_points_menu()
+{
+
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_T("Troubleshoot"));
+  	// Column 1
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 1"),mbl_cal_row1_col1);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 1"),mbl_cal_row2_col1);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 1"),mbl_cal_row3_col1);
+	// Column 2
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 2"),mbl_cal_row1_col2);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 2"),mbl_cal_row2_col2);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 2"),mbl_cal_row3_col2);
+	// Column 3
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 3"),mbl_cal_row1_col3);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 3"),mbl_cal_row2_col3);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 3"),mbl_cal_row3_col3);
+  MENU_END();
+}
+
+static void lcd_xyz_cal_points_menu()
+{
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_T("Troubleshoot"));
+	MENU_ITEM_FUNCTION_P(_i("Point 1"),xyz_cal_point1);
+	MENU_ITEM_FUNCTION_P(_i("Point 2"),xyz_cal_point2);
+	MENU_ITEM_FUNCTION_P(_i("Point 3"),xyz_cal_point3);
+	MENU_ITEM_FUNCTION_P(_i("Point 4"),xyz_cal_point4);
+  MENU_END();
+}
+#endif
+
+static void lcd_troubleshoot_menu()
+{
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_T(MSG_MAIN));
+  if (!isPrintPaused)
+  {
+	MENU_ITEM_GCODE_P(_i("Home X"), PSTR("G28 X"));
+	MENU_ITEM_GCODE_P(_i("Home Y"), PSTR("G28 Y"));
+	MENU_ITEM_GCODE_P(_i("Home Z"), PSTR("G28 Z"));
+#ifndef HEATBED_V2
+	MENU_ITEM_SUBMENU_P(_i("MBL Mesh Points"), lcd_mbl_cal_points_menu);
+	MENU_ITEM_SUBMENU_P(_i("Bed XYZ Cal. Points"), lcd_xyz_cal_points_menu);
+#endif
+	MENU_ITEM_GCODE_P(_i("Reset EEPROM"), PSTR("M502;M500"));
+	MENU_ITEM_GCODE_P(_i("Factory Reset"), PSTR("PRUSA FR"));
+  }
+  MENU_END();
+}
+
 void bowden_menu() {
 	int enc_dif = lcd_encoder_diff;
 	int cursor_pos = 0;
@@ -7014,6 +7199,7 @@ static void lcd_main_menu()
 	}
 	MENU_ITEM_SUBMENU_P(_T(MSG_SETTINGS), lcd_settings_menu);
     if(!isPrintPaused) MENU_ITEM_SUBMENU_P(_T(MSG_MENU_CALIBRATION), lcd_calibration_menu);
+    MENU_ITEM_SUBMENU_P(_i("Troubleshoot"), lcd_troubleshoot_menu);
 
   }
   
@@ -7762,8 +7948,6 @@ bool lcd_selftest()
 
 		//homeaxis(X_AXIS);
 		//homeaxis(Y_AXIS);
-        current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
-		current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4+1);
 #ifdef TMC2130
 		//current_position[X_AXIS] += 0;
 		current_position[Y_AXIS] += 4;
@@ -7776,6 +7960,10 @@ bool lcd_selftest()
 #ifdef TMC2130
 		homeaxis(Z_AXIS); //In case of failure, the code gets stuck in this function.
 #else
+		current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
+		current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4+1);
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
         _result = lcd_selfcheck_axis(Z_AXIS, Z_MAX_POS);
 #endif //TMC2130
 
@@ -8012,7 +8200,7 @@ static bool lcd_selfcheck_axis_sg(unsigned char axis) {
 
 static bool lcd_selfcheck_axis(int _axis, int _travel)
 {
-//	printf_P(PSTR("lcd_selfcheck_axis %d, %d\n"), _axis, _travel);
+	printf_P(PSTR("lcd_selfcheck_axis %d, %d\n"), _axis, _travel);
 	bool _stepdone = false;
 	bool _stepresult = false;
 	int _progress = 0;
@@ -8022,8 +8210,11 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 	_travel = _travel + (_travel / 10);
 
 	if (_axis == X_AXIS) {
-		current_position[Z_AXIS] += 17;
+		current_position[Z_AXIS] += 10;
+		current_position[Y_AXIS] += 10;
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
+		_delay(1000);
 	}
 
 	do {
@@ -8216,14 +8407,17 @@ static bool lcd_selfcheck_pulleys(int axis)
 static bool lcd_selfcheck_endstops()
 {
 	bool _result = true;
-/*#ifndef TMC2130
-	current_position[X_AXIS] = current_position[X_AXIS] + 5;
-	current_position[Y_AXIS] = current_position[Y_AXIS] + 5;
-	current_position[Z_AXIS] = current_position[Z_AXIS] + 5;
+#ifndef TMC2130
+	bool endstops = enable_endstops(false);
+	current_position[X_AXIS] += 15;
+	current_position[Y_AXIS] += 15;
+	current_position[Z_AXIS] += 15;
 
 	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
 	st_synchronize();
-#endif*/
+	_delay(100);
+	enable_endstops(endstops);
+#endif
 	if (
 	#ifndef TMC2130
 		((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ||

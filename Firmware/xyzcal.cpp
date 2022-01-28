@@ -691,10 +691,16 @@ const int16_t xyzcal_point_ycoords[4] PROGMEM = {600, 600, 19800, 19800};
 #endif //((MOTHERBOARD == BOARD_EINSY_1_0a))
 
 //MK2.5
-#if ((MOTHERBOARD == BOARD_RAMBO_MINI_1_0) || (MOTHERBOARD == BOARD_RAMBO_MINI_1_3) || (MOTHERBOARD == BOARD_MKS_BASE_1_3))
+#if ((MOTHERBOARD == BOARD_RAMBO_MINI_1_0) || (MOTHERBOARD == BOARD_RAMBO_MINI_1_3))
 const int16_t xyzcal_point_xcoords[4] PROGMEM = {1200, 22000, 22000, 1200};
 const int16_t xyzcal_point_ycoords[4] PROGMEM = {700, 700, 19800, 19800};
-#endif //((MOTHERBOARD == BOARD_RAMBO_MINI_1_0) || (MOTHERBOARD == BOARD_RAMBO_MINI_1_3) || (MOTHERBOARD == BOARD_MKS_BASE_1_3))
+#endif //((MOTHERBOARD == BOARD_RAMBO_MINI_1_0) || (MOTHERBOARD == BOARD_RAMBO_MINI_1_3))
+
+
+#if ((MOTHERBOARD == BOARD_MKS_BASE_1_3))
+const int16_t xyzcal_point_xcoords[4] PROGMEM = {1200, 11400, 21400, 11400};
+const int16_t xyzcal_point_ycoords[4] PROGMEM = {9500, -200, 9500, 19400};
+#endif //((MOTHERBOARD == BOARD_MKS_BASE_1_3))
 
 const uint16_t xyzcal_point_pattern[12] PROGMEM = {0x000, 0x0f0, 0x1f8, 0x3fc, 0x7fe, 0x7fe, 0x7fe, 0x7fe, 0x3fc, 0x1f8, 0x0f0, 0x000};
 

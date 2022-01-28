@@ -799,7 +799,7 @@ int uart_putchar(char c, FILE *)
 void lcd_splash()
 {
 	lcd_clear(); // clears display and homes screen
-	lcd_puts_P(PSTR("\n Original Prusa i3\n   Prusa Research"));
+	lcd_puts_P(PSTR("\n Compatible Prusa i3\n   Prusa Research"));
 }
 
 
@@ -2986,19 +2986,21 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 	//set_destination_to_current();
 	int l_feedmultiply = setup_for_endstop_move();
 	lcd_display_message_fullscreen_P(_T(MSG_AUTO_HOME));
+
+	current_position[Z_AXIS] += 10;
+	plan_buffer_line_curposXYZE(homing_feedrate[Z_AXIS] / 40);
+	st_synchronize();
+
 	home_xy();
 
 	enable_endstops(false);
 #ifdef HEATBED_V2
 	current_position[X_AXIS] += 5;
 	current_position[Y_AXIS] += 5;
-#endif
-#ifdef ORBALLO_P3STEEL
-	current_position[X_AXIS] += 14; // 11
-	current_position[Y_AXIS] += -2; // -3
 #else
-  current_position[X_AXIS] += 5; // 11
-	current_position[Y_AXIS] += 5; // -3
+  current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
+	current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4+1);
+  lcd_display_message_fullscreen_P(_i("Safe Z homing..."));
 #endif
 	plan_buffer_line_curposXYZE(homing_feedrate[Z_AXIS] / 40);
 	st_synchronize();
@@ -3027,19 +3029,19 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 		}
 
 		refresh_cmd_timeout();
-		#ifndef STEEL_SHEET
+#ifndef STEEL_SHEET
 		if (((degHotend(0) > MAX_HOTEND_TEMP_CALIBRATION) || (degBed() > MAX_BED_TEMP_CALIBRATION)) && (!onlyZ))
 		{
 			lcd_wait_for_cool_down();
 		}
-		#endif //STEEL_SHEET
+#endif //STEEL_SHEET
 		if(!onlyZ)
 		{
 			KEEPALIVE_STATE(PAUSED_FOR_USER);
-			#ifdef STEEL_SHEET
+#ifdef STEEL_SHEET
 			bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 			if(result) lcd_show_fullscreen_message_and_wait_P(_T(MSG_REMOVE_STEEL_SHEET));
-			#endif //STEEL_SHEET
+#endif //STEEL_SHEET
 		    lcd_show_fullscreen_message_and_wait_P(_T(MSG_PAPER));
 			KEEPALIVE_STATE(IN_HANDLER);
 			lcd_display_message_fullscreen_P(_T(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1));
@@ -3147,18 +3149,18 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 		else
 		{
 			lcd_show_fullscreen_message_and_wait_P(PSTR("Calibration failed! Check the axes and run again."));
-      lcd_clear();
-      lcd_set_cursor(0, 0);
-      lcd_puts_P(PSTR("  Z Axis measures  "));
-      lcd_set_cursor(0, 1);
-      menu_draw_float31(PSTR("Z:"),st_get_position_mm(Z_AXIS));
-      lcd_set_cursor(0, 2);
-      menu_draw_float31(PSTR("<:"),(MESH_HOME_Z_SEARCH + HOME_Z_SEARCH_THRESHOLD));
-      lcd_set_cursor(0, 3);
-      menu_draw_float31(PSTR(">:"),(MESH_HOME_Z_SEARCH - HOME_Z_SEARCH_THRESHOLD));
-      lcd_wait_for_click_delay(MSG_BED_LEVELING_FAILED_TIMEOUT);
 			final_result = false;
 		}
+    lcd_clear();
+    lcd_set_cursor(0, 0);
+    lcd_puts_P(PSTR("  Z Axis measures  "));
+    lcd_set_cursor(0, 1);
+    menu_draw_float31(PSTR("Z:"),st_get_position_mm(Z_AXIS));
+    lcd_set_cursor(0, 2);
+    menu_draw_float31(PSTR("<:"),(MESH_HOME_Z_SEARCH + HOME_Z_SEARCH_THRESHOLD));
+    lcd_set_cursor(0, 3);
+    menu_draw_float31(PSTR(">:"),(MESH_HOME_Z_SEARCH - HOME_Z_SEARCH_THRESHOLD));
+    lcd_wait_for_click_delay(MSG_BED_LEVELING_FAILED_TIMEOUT);
 	}
 	else
 	{
@@ -4001,8 +4003,9 @@ void process_commands()
 	  lang_reset();
 
 	} else if(code_seen("Lz")) { // PRUSA Lz
+#ifdef STEEL_SHEET
       eeprom_update_word(reinterpret_cast<uint16_t *>(&(EEPROM_Sheets_base->s[(eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet)))].z_offset)),0);
-
+#endif
 	} else if(code_seen("Beat")) { // PRUSA Beat
         // Kick farm link timer
         kicktime = _millis();
@@ -4758,6 +4761,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             break;
         }
         lcd_show_fullscreen_message_and_wait_P(_i("Stable ambient temperature 21-26C is needed a rigid stand is required."));////MSG_TEMP_CAL_WARNING c=20 r=4
+#ifdef STEEL_SHEET
         bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 
         if (result)
@@ -4776,6 +4780,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             gcode_G28(false, false, true);
 
         }
+#endif
         if ((current_temperature_pinda > 35) && (farm_mode == false)) {
             //waiting for PIDNA probe to cool down in case that we are not in farm mode
             current_position[Z_AXIS] = 100;
@@ -4920,7 +4925,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
 		}
 		eeprom_update_byte((uint8_t*)EEPROM_CALIBRATION_STATUS_PINDA, 0); //invalidate temp. calibration in case that in will be aborted during the calibration process 
 
-		current_position[Z_AXIS] = 5;
+		current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
 		plan_buffer_line_curposXYZE(3000 / 60);
 
 		current_position[X_AXIS] = BED_X0;

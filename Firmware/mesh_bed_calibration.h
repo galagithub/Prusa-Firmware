@@ -1,10 +1,10 @@
 #ifndef MESH_BED_CALIBRATION_H
 #define MESH_BED_CALIBRATION_H
 
+#ifdef HEATBED_V2
+
 #define BED_ZERO_REF_X (- 22.f + X_PROBE_OFFSET_FROM_EXTRUDER) // -22 + 23 = 1
 #define BED_ZERO_REF_Y (- 0.6f + Y_PROBE_OFFSET_FROM_EXTRUDER + 4.f) // -0.6 + 5 + 4 = 8.4
-
-#ifdef HEATBED_V2
 
 #define BED_X0 (2.f - BED_ZERO_REF_X) //1
 #define BED_Y0 (9.4f - BED_ZERO_REF_Y) //1
@@ -13,10 +13,25 @@
 
 #else
 
-#define BED_X0 (13.f - BED_ZERO_REF_X)
-#define BED_Y0 (8.4f - BED_ZERO_REF_Y)
-#define BED_Xn (216.f - BED_ZERO_REF_X)
-#define BED_Yn (202.4f - BED_ZERO_REF_Y)
+#define BED_ZERO_REF_X (- 22.f + X_PROBE_OFFSET_FROM_EXTRUDER) // -22 + 23 = 1
+#define BED_ZERO_REF_Y (- 0.6f + Y_PROBE_OFFSET_FROM_EXTRUDER + 4.f) // -0.6 + 9 + 4 = 12.4
+
+/* MK42
+X,Y
+[12,-4]
+[12,95]
+[12,194]
+[114,-4]
+[114,95]
+[114,194]
+[214,-4]
+[214,95]
+[214,194]
+*/
+#define BED_X0 (13.f - BED_ZERO_REF_X) // 13-1.0=12
+#define BED_Y0 (8.4f - BED_ZERO_REF_Y) // 8.4-12.4=-4
+#define BED_Xn (215.f - BED_ZERO_REF_X) // 215-1=214
+#define BED_Yn (206.4f - BED_ZERO_REF_Y) // 206.4-12.4=194
 
 #endif //not HEATBED_V2
 
