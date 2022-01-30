@@ -148,6 +148,7 @@ int8_t mmu_rx_start(void)
 //initialize mmu2 unit - first part - should be done at begining of startup process
 void mmu_init(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 #ifdef MMU_HWRESET
 	digitalWrite(MMU_RST_PIN, HIGH);
 	pinMode(MMU_RST_PIN, OUTPUT);              //setup reset pin
@@ -156,6 +157,7 @@ void mmu_init(void)
 	_delay_ms(10);                             //wait 10ms for sure
 	mmu_reset();                               //reset mmu (HW or SW), do not wait for response
 	mmu_state = S::Init;
+#endif
 	SET_INPUT(IR_SENSOR_PIN); //input mode
 	WRITE(IR_SENSOR_PIN, 1); //pullup
 }
@@ -489,12 +491,14 @@ void mmu_loop(void)
 
 void mmu_reset(void)
 {
+#ifndef PRINTER_MMU_DISABLE
 #ifdef MMU_HWRESET                             //HW - pulse reset pin
 	digitalWrite(MMU_RST_PIN, LOW);
 	_delay_us(100);
 	digitalWrite(MMU_RST_PIN, HIGH);
 #else                                          //SW - send X0 command
     mmu_puts_P(PSTR("X0\n"));
+#endif
 #endif
 }
 

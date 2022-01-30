@@ -101,8 +101,10 @@ extern uint8_t menu_item_text_P(const char* str);
 #define MENU_ITEM_SUBMENU_P(str, submenu) do { if (menu_item_submenu_P(str, submenu)) return; } while (0)
 extern uint8_t menu_item_submenu_P(const char* str, menu_func_t submenu);
 
+#ifdef STEEL_SHEET
 #define MENU_ITEM_SUBMENU_E(sheet, submenu) do { if (menu_item_submenu_E(sheet, submenu)) return; } while (0)
 extern uint8_t menu_item_submenu_E(const Sheet &sheet, menu_func_t submenu);
+#endif
 
 #define MENU_ITEM_FUNCTION_E(sheet, submenu) do { if (menu_item_function_E(sheet, submenu)) return; } while (0)
 extern uint8_t menu_item_function_E(const Sheet &sheet, menu_func_t func);
@@ -142,7 +144,9 @@ struct SheetFormatBuffer
     char c[19];
 };
 
+#ifdef STEEL_SHEET
 extern void menu_format_sheet_E(const Sheet &sheet_E, SheetFormatBuffer &buffer);
+#endif
 
 
 #define MENU_ITEM_EDIT_int3_P(str, pval, minval, maxval) do { if (menu_item_edit_P(str, pval, minval, maxval)) return; } while (0)

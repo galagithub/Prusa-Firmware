@@ -202,6 +202,7 @@ static void menu_draw_toggle_puts_P(const char* str, const char* toggle, const u
     fputs(lineStr, lcdout);
 }
 
+#ifdef STEEL_SHEET
 //! @brief Format sheet name
 //!
 //! @param[in] sheet_E Sheet in EEPROM
@@ -246,6 +247,7 @@ static void menu_draw_item_puts_E(char type_char, const Sheet &sheet)
     menu_format_sheet_E(sheet, buffer);
     lcd_printf_P(PSTR("%c%-18.18s%c"), menu_selection_mark(), buffer.c, type_char);
 }
+#endif
 
 static void menu_draw_item_puts_P(char type_char, const char* str, char num)
 {
@@ -296,6 +298,7 @@ uint8_t menu_item_submenu_P(const char* str, menu_func_t submenu)
 	return 0;
 }
 
+#ifdef STEEL_SHEET
 uint8_t menu_item_submenu_E(const Sheet &sheet, menu_func_t submenu)
 {
     if (menu_item == menu_line)
@@ -329,6 +332,7 @@ uint8_t __attribute__((noinline)) menu_item_function_E(const Sheet &sheet, menu_
     menu_item++;
     return 0;
 }
+#endif
 
 uint8_t menu_item_back_P(const char* str)
 {

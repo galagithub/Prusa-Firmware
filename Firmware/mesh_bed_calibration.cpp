@@ -77,20 +77,60 @@ const float bed_skew_angle_extreme = (0.25f * M_PI / 180.f);
  * MK25 and MK3: front left, front right, rear right, rear left
  */
 const float bed_ref_points_4[] PROGMEM = {
+    // 37-2-23-0=12
+    // 18.4-9.4-5-2=2 (MK3) 18.4-9.4-5-0=4 (MK25)
 	37.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER - SHEET_PRINT_ZERO_REF_X,
 	18.4f - BED_PRINT_ZERO_REF_Y - Y_PROBE_OFFSET_FROM_EXTRUDER - SHEET_PRINT_ZERO_REF_Y,
 
-	245.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
+	// 245-2-23-0=220
+    // 18.4-9.4-5-2=2 (MK3) 18.4-9.4-5-0=4 (MK25)
+    245.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
 	18.4f - BED_PRINT_ZERO_REF_Y - Y_PROBE_OFFSET_FROM_EXTRUDER - SHEET_PRINT_ZERO_REF_Y,
 
-	245.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
+	// 245-2-23-0=220
+    // 210.4-9.4-5-2=194 (MK3) 210.4-9.4-5-0=196 (MK25)
+    245.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
 	210.4f - BED_PRINT_ZERO_REF_Y - Y_PROBE_OFFSET_FROM_EXTRUDER - SHEET_PRINT_ZERO_REF_Y,
 
-	37.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
+	// 37-2-23-0=12
+    // 210.4-9.4-5-2=194 (MK3) 210.4-9.4-5-0=196 (MK25)
+    37.f - BED_PRINT_ZERO_REF_X - X_PROBE_OFFSET_FROM_EXTRUDER  - SHEET_PRINT_ZERO_REF_X,
 	210.4f - BED_PRINT_ZERO_REF_Y - Y_PROBE_OFFSET_FROM_EXTRUDER - SHEET_PRINT_ZERO_REF_Y
 };
 
 #else
+#ifdef ORBALLO_P3STEEL_FRAME
+/* MK42
+X,Y
+[12,-4]
+[12,95]
+[12,194]
+[114,-4]
+[114,95]
+[114,194]
+[214,-4]
+[214,95]
+[214,194]
+*/
+
+// Positions of the bed reference points in the machine coordinates, referenced to the P.I.N.D.A sensor.
+// The points are the following: center front, center right, center rear, center left.
+const float bed_ref_points_4[] PROGMEM = {
+	115.f - BED_ZERO_REF_X, // 115-(-22+23)=114
+    10.4f - BED_ZERO_REF_Y, // 10.4-(-0.6+9+4)=-2
+
+
+	216.f - BED_ZERO_REF_X, // 216-(-22+23)=214
+    107.4f - BED_ZERO_REF_Y, // 107.4-(-0.6+9+4)=95
+
+
+	115.f - BED_ZERO_REF_X, // 115-(-22+23)=114
+    206.4f - BED_ZERO_REF_Y, // 206.4-(-0.6+9+4)=194
+
+	13.f - BED_ZERO_REF_X, // 13-(-22+23)=12
+    107.4f - BED_ZERO_REF_Y // 107.4-(-0.6+9+4)=95
+};
+#else // ORBALLO_P3STEEL_FRAME
 
 // Positions of the bed reference points in the machine coordinates, referenced to the P.I.N.D.A sensor.
 // The points are the following: center front, center right, center rear, center left.
@@ -101,6 +141,8 @@ const float bed_ref_points_4[] PROGMEM = {
 	13.f - BED_ZERO_REF_X, 104.4f - BED_ZERO_REF_Y
 };
 
+
+#endif // not ORBALLO_P3STEEL_FRAME
 #endif //not HEATBED_V2
 
 
@@ -2796,7 +2838,9 @@ bool sample_z() {
 	go_to_current(homing_feedrate[Z_AXIS] / 60);
 	//plan_buffer_line_curposXYZE(feedrate, active_extruder););
 
+#ifdef STEEL_SHEET
 	lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
+#endif
 
 	// Sample Z heights for the mesh bed leveling.
 	// In addition, store the results into an eeprom, to be used later for verification of the bed leveling process.

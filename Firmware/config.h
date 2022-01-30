@@ -11,10 +11,21 @@
 
 //ADC configuration
 #ifndef IR_SENSOR_ANALOG
+#if MOTHERBOARD == BOARD_MKS_BASE_1_3
+#define ADC_CHAN_MSK      0b1111100000000000 //used AD channels bit mask (11,12,13,14,15)
+#define ADC_DIDR_MSK      0b1111100000000000 //AD channels DIDR mask (1 ~ disabled digital input)
+#define ADC_CHAN_CNT      5         //number of used channels)
+#else
 #define ADC_CHAN_MSK      0b0000001001011111 //used AD channels bit mask (0,1,2,3,4,6,9)
 #define ADC_DIDR_MSK      0b0000001001011111 //AD channels DIDR mask (1 ~ disabled digital input)
 #define ADC_CHAN_CNT      7         //number of used channels)
+#endif
 #else //!IR_SENSOR_ANALOG
+#if MOTHERBOARD == BOARD_MKS_BASE_1_3
+#define ADC_CHAN_MSK      0b1111100000000000 //used AD channels bit mask (11,12,13,14,15)
+#define ADC_DIDR_MSK      0b1111100000000000 //AD channels DIDR mask (1 ~ disabled digital input)
+#define ADC_CHAN_CNT      5         //number of used channels)
+#endif
 #define ADC_CHAN_MSK      0b0000001101011111 //used AD channels bit mask (0,1,2,3,4,6,8,9)
 #define ADC_DIDR_MSK      0b0000001001011111 //AD channels DIDR mask (1 ~ disabled digital input)
 #define ADC_CHAN_CNT      8         //number of used channels)

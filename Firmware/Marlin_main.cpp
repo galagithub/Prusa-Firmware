@@ -800,7 +800,7 @@ int uart_putchar(char c, FILE *)
 void lcd_splash()
 {
 	lcd_clear(); // clears display and homes screen
-	lcd_puts_P(PSTR("\n Original Prusa i3\n   Prusa Research"));
+	lcd_puts_P(PSTR("\n Compatible Prusa i3\n   Prusa Research \n"));
 }
 
 
@@ -3552,10 +3552,10 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 		if(!onlyZ)
 		{
 			KEEPALIVE_STATE(PAUSED_FOR_USER);
-			#ifdef STEEL_SHEET
+#ifdef STEEL_SHEET
 			bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 			if(result) lcd_show_fullscreen_message_and_wait_P(_T(MSG_REMOVE_STEEL_SHEET));
-			#endif //STEEL_SHEET
+#endif //STEEL_SHEET
 		    lcd_show_fullscreen_message_and_wait_P(_T(MSG_PAPER));
 			KEEPALIVE_STATE(IN_HANDLER);
 			lcd_display_message_fullscreen_P(_T(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1));
@@ -4535,11 +4535,13 @@ void process_commands()
 		{
                eeprom_update_byte((uint8_t*)EEPROM_UVLO,0); 
                enquecommand_P(PSTR("M24")); 
-		}	
+		}
+#ifndef PRINTER_MMU_DISABLE
 		else if (code_seen_P(PSTR("MMURES"))) // PRUSA MMURES
 		{
 			mmu_reset();
 		}
+#endif
 		else if (code_seen_P(PSTR("RESET"))) { // PRUSA RESET
 #ifdef WATCHDOG
 #if defined(XFLASH) && defined(BOOTAPP)
@@ -5349,9 +5351,11 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             break;
         }
         lcd_show_fullscreen_message_and_wait_P(_i("Stable ambient temperature 21-26C is needed a rigid stand is required."));////MSG_TEMP_CAL_WARNING c=20 r=4
+#ifdef STEEL_SHEET
         bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 
         if (result)
+#endif
         {
             current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
             plan_buffer_line_curposXYZE(3000 / 60);
@@ -5359,7 +5363,9 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             current_position[Y_AXIS] = 180;
             plan_buffer_line_curposXYZE(3000 / 60);
             st_synchronize();
+#ifdef STEEL_SHEET
             lcd_show_fullscreen_message_and_wait_P(_T(MSG_REMOVE_STEEL_SHEET));
+#endif
             current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4 + 1);
             current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
             plan_buffer_line_curposXYZE(3000 / 60);

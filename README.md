@@ -1,3 +1,11 @@
+# Compatible Prusa MKx firmware
+This repo is a fork of the Original Prusa Firmware and supports custom printer builds.
+
+So far, this was added:
+- MKS Base 1.3 board support (MMU not supported!)
+- MK3 Einsy controller fitted on MK2.5 printer HW (MK3-12V)
+- Custom MK2S printer win P3Steel frame, MK42 bed and MKS Base v1.3 controller (Orballo MK2S)
+
 # Prusa Firmware MK3
 
 This repository contains the source code and the development versions of the firmware running on the [Original Prusa i3](https://prusa3d.com/) MK3S/MK3/MK2.5S/MK2.5 line of printers.

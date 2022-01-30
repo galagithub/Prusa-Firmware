@@ -165,7 +165,9 @@ static void reset_crash_det(unsigned char axis);
 static bool lcd_selfcheck_axis_sg(unsigned char axis);
 #else
 static bool lcd_selfcheck_axis(int _axis, int _travel);
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 static bool lcd_selfcheck_pulleys(int axis);
+#endif
 #endif //TMC2130
 static bool lcd_selfcheck_endstops();
 
@@ -1424,6 +1426,7 @@ static void pgmtext_with_colon(const char *ipgmLabel, char *dst, uint8_t dstSize
     dst[dstSize-1] = '\0';      // terminate the string properly
 }
 
+#ifdef FANCHECK
 //! @brief Show Extruder Info
 //!
 //! @code{.unparsed}
@@ -1445,9 +1448,10 @@ void lcd_menu_extruder_info()                     // NOT static due to using ins
     char nozzle[maxChars], print[maxChars];
     pgmtext_with_colon(_i("Nozzle FAN"), nozzle, maxChars);  ////MSG_NOZZLE_FAN c=10
     pgmtext_with_colon(_i("Print FAN"), print, maxChars);  ////MSG_PRINT_FAN c=10
-	lcd_printf_P(_N("%s %4d RPM\n" "%s %4d RPM\n"), nozzle, 60*fan_speed[0], print, 60*fan_speed[1] ); 
+	lcd_printf_P(_N("%s %4d RPM\n" "%s %4d RPM\n"), nozzle, 60*fan_speed[0], print, 60*fan_speed[1] );
     menu_back_if_clicked();
 }
+#endif
 
 static uint16_t __attribute__((noinline)) clamp999(uint16_t v){
     return v > 999 ? 999 : v;
@@ -2037,7 +2041,9 @@ static void lcd_support_menu()
   #ifndef MK1BP
   MENU_ITEM_BACK_P(STR_SEPARATOR);
   MENU_ITEM_SUBMENU_P(_i("XYZ cal. details"), lcd_menu_xyz_y_min);////MSG_XYZ_DETAILS c=18
+#ifdef FANCHECK
   MENU_ITEM_SUBMENU_P(_i("Extruder info"), lcd_menu_extruder_info);////MSG_INFO_EXTRUDER c=18
+#endif
   MENU_ITEM_SUBMENU_P(_i("Sensor info"), lcd_menu_show_sensors_state);////MSG_INFO_SENSORS c=18
 
 #ifdef TMC2130
@@ -3026,10 +3032,12 @@ static void lcd_babystep_z()
 	}
 	if (lcd_draw_update)
 	{
+#ifdef STEEL_SHEET
 	    SheetFormatBuffer buffer;
 	    menu_format_sheet_E(EEPROM_Sheets_base->s[(eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet)))], buffer);
 	    lcd_set_cursor(0, 0);
 	    lcd_print(buffer.c);
+#endif
 	    lcd_set_cursor(0, 1);
 		menu_draw_float13(_i("Adjusting Z:"), _md->babystepMemMMZ); ////MSG_BABYSTEPPING_Z c=15 Beware: must include the ':' as its last character
 	}
@@ -4955,10 +4963,16 @@ void lcd_wizard(WizState state)
 			break;
 		case S::Z:
 			lcd_show_fullscreen_message_and_wait_P(_i("Please remove shipping helpers first."));////MSG_REMOVE_SHIPPING_HELPERS c=20 r=3
+#ifdef STEEL_SHEET
 			lcd_show_fullscreen_message_and_wait_P(_i("Now remove the test print from steel sheet."));////MSG_REMOVE_TEST_PRINT c=20 r=4
+#else
+			lcd_show_fullscreen_message_and_wait_P(_i("Now remove any test print from the bed."));////MSG_REMOVE_TEST_PRINT c=20 r=4
+#endif
 			lcd_show_fullscreen_message_and_wait_P(_i("I will run z calibration now."));////MSG_WIZARD_Z_CAL c=20 r=8
+#ifdef STEEL_SHEET
 			wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(_T(MSG_STEEL_SHEET_CHECK), false, false);
 			if (!wizard_event) lcd_show_fullscreen_message_and_wait_P(_T(MSG_PLACE_STEEL_SHEET));
+#endif
 			wizard_event = gcode_M45(true, 0);
 			if (wizard_event) {
 				//current filament needs to be unloaded and then new filament should be loaded
@@ -5026,7 +5040,9 @@ void lcd_wizard(WizState state)
 			}
 			else
 			{
+#ifdef STEEL_SHEET
 			    lcd_show_fullscreen_message_and_wait_P(_i("If you have additional steel sheets, calibrate their presets in Settings - HW Setup - Steel sheets."));////MSG_ADDITIONAL_SHEETS c=20 r=9
+#endif
 				state = S::Finish;
 			}
 			break;
@@ -5223,6 +5239,7 @@ do\
 while (0)
 
 #else //TMC2130
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 #define SETTINGS_SILENT_MODE \
 do\
 {\
@@ -5246,6 +5263,7 @@ do\
     }\
 }\
 while (0)
+#endif
 #endif //TMC2130
 
 #ifndef MMU_FORCE_STEALTH_MODE
@@ -5596,6 +5614,7 @@ static void select_sheet_menu()
     lcd_sheet_menu();
 }
 
+#ifdef STEEL_SHEET
 static void sheets_menu()
 {
     MENU_BEGIN();
@@ -5610,6 +5629,7 @@ static void sheets_menu()
     MENU_ITEM_SUBMENU_E(EEPROM_Sheets_base->s[7], select_sheet_menu<7>);
     MENU_END();
 }
+#endif
 
 void lcd_hw_setup_menu(void)                      // can not be "static"
 {
@@ -5635,8 +5655,9 @@ void lcd_hw_setup_menu(void)                      // can not be "static"
 
     MENU_BEGIN();
     MENU_ITEM_BACK_P(_T(bSettings?MSG_SETTINGS:MSG_BACK)); // i.e. default menu-item / menu-item after checking mismatch
-
+#ifdef STEEL_SHEET
     MENU_ITEM_SUBMENU_P(_T(MSG_STEEL_SHEETS), sheets_menu);
+#endif
     SETTINGS_NOZZLE;
     MENU_ITEM_SUBMENU_P(_i("Checks"), lcd_checking_menu);  ////MSG_CHECKS c=18
 
@@ -5684,9 +5705,13 @@ static void lcd_settings_menu()
 
 	SETTINGS_CUTTER;
 
+#ifdef FANCHECK
 	MENU_ITEM_TOGGLE_P(_T(MSG_FANS_CHECK), fans_check_enabled ? _T(MSG_ON) : _T(MSG_OFF), lcd_set_fan_check);
+#endif
 
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 	SETTINGS_SILENT_MODE;
+#endif
 
     if(!farm_mode)
     {
@@ -6414,7 +6439,7 @@ static void change_sheet()
 }
 
 
-
+#ifdef STEEL_SHEET
 static void lcd_rename_sheet_menu()
 {
     struct MenuData
@@ -6502,6 +6527,7 @@ static void lcd_sheet_menu()
 
     MENU_END();
 }
+#endif
 
 //! @brief Show Main Menu
 //!
@@ -6624,11 +6650,13 @@ static void lcd_main_menu()
 
     if(!isPrintPaused && !IS_SD_PRINTING && !is_usb_printing && (lcd_commands_type != LcdCommands::Layer1Cal)) {
         if (!farm_mode) {
+#ifdef STEEL_SHEEET
             const int8_t sheet = eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet));
             const int8_t nextSheet = eeprom_next_initialized_sheet(sheet);
             if ((nextSheet >= 0) && (sheet != nextSheet)) { // show menu only if we have 2 or more sheets initialized
                 MENU_ITEM_FUNCTION_E(EEPROM_Sheets_base->s[sheet], eeprom_switch_to_next_sheet);
             }
+#endif
         }
     }
 
@@ -6838,7 +6866,9 @@ static void lcd_tune_menu()
 
 	SETTINGS_CUTTER;
 
+#ifdef FANCHECK
 	MENU_ITEM_TOGGLE_P(_T(MSG_FANS_CHECK), fans_check_enabled ? _T(MSG_ON) : _T(MSG_OFF), lcd_set_fan_check);
+#endif
 
 
 #ifdef TMC2130
@@ -6856,12 +6886,14 @@ static void lcd_tune_menu()
      }
 #else //TMC2130
 	if (!farm_mode) { //dont show in menu if we are in farm mode
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 		switch (SilentModeMenu) {
 		case SILENT_MODE_POWER: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_HIGH_POWER), lcd_silent_mode_set); break;
 		case SILENT_MODE_SILENT: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_SILENT), lcd_silent_mode_set); break;
 		case SILENT_MODE_AUTO: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_AUTO_POWER), lcd_silent_mode_set); break;
 		default: MENU_ITEM_TOGGLE_P(_T(MSG_MODE), _T(MSG_HIGH_POWER), lcd_silent_mode_set); break; // (probably) not needed
 		}
+#endif
 	}
 #endif //TMC2130
 	SETTINGS_MMU_MODE;
@@ -7459,7 +7491,9 @@ bool lcd_selftest()
 		_progress = lcd_selftest_screen(TestScreen::AxisX, _progress, 3, true, 0);
 
 #ifndef TMC2130
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 		_result = lcd_selfcheck_pulleys(X_AXIS);
+#endif
 #endif
 	}
 
@@ -7478,7 +7512,9 @@ bool lcd_selftest()
 	{
 		_progress = lcd_selftest_screen(TestScreen::AxisZ, _progress, 3, true, 0);
 #ifndef TMC2130
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 		_result = lcd_selfcheck_pulleys(Y_AXIS);
+#endif
 #endif // TMC2130
 	}
 
@@ -7844,6 +7880,7 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 	return _stepresult;
 }
 
+#ifdef MOTOR_CURRENT_PWM_XY_PIN
 static bool lcd_selfcheck_pulleys(int axis)
 {
 	float tmp_motor_loud[3] = DEFAULT_PWM_MOTOR_CURRENT_LOUD;
@@ -7910,6 +7947,7 @@ static bool lcd_selfcheck_pulleys(int axis)
 	}
 	return(true);
 }
+#endif
 #endif //not defined TMC2130
 
 
