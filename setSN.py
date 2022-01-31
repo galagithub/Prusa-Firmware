@@ -1,14 +1,32 @@
 #!/bin/python3
 
+# serial port
 port='/dev/ttyUSB0'
+
 # serial number, 19 chars, must start with CZPX
-serialNumber=b'CZPXCOMPATMK2000001'
+serialNumber=bytearray(b'CZPXCOMPATMK2')
 
 import serial
-ser = serial.Serial(port, 115200)  # open serial port
-print(ser.name)         # check which port was really used
-line = ser.readline()
-print(line)
-if line.startwith(";S"):
-    ser.write(serialNumber)     # write a string
-ser.close() 
+import random
+snrnd = bytearray(str(random.randrange(999999)),'utf-8')
+print("Random serial:", bytes(snrnd))
+serialNumber+=snrnd
+print("Full SN: ",bytes(serialNumber))
+ser = serial.Serial()
+ser.port = port
+ser.baudrate = 115200
+print("Opening port ",ser.name," ...")
+try:
+    ser.open()  # open serial port
+    if ser.is_open:
+        print("Looking for invalid SN start ....")
+        line = ser.readline()
+        print(line)
+        if line.startwith(";S"):
+            ser.write(serialNumber)
+            print("SN was set to ",serialNumber)
+        else:
+            print("Could not find Prusa SN write prompt!")
+        ser.close()
+except:
+    print("Could not open port! SN write aborted...")
