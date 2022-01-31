@@ -3518,8 +3518,14 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 	home_xy();
 
 	enable_endstops(false);
+#ifdef HEATBED_V2
 	current_position[X_AXIS] += 5;
 	current_position[Y_AXIS] += 5;
+#else
+  current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
+	current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4+1);
+  lcd_display_message_fullscreen_P(_i("Safe Z homing..."));
+#endif
 	plan_buffer_line_curposXYZE(homing_feedrate[Z_AXIS] / 40);
 	st_synchronize();
 
@@ -4592,7 +4598,9 @@ void process_commands()
 	  lang_reset();
 
 	} else if(code_seen_P(PSTR("Lz"))) { // PRUSA Lz
+#ifdef STEEL_SHEET
       eeprom_update_word(reinterpret_cast<uint16_t *>(&(EEPROM_Sheets_base->s[(eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet)))].z_offset)),0);
+#endif
 
 	} else if(code_seen_P(PSTR("Beat"))) { // PRUSA Beat
         // Kick farm link timer

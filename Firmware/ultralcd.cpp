@@ -5631,6 +5631,27 @@ static void sheets_menu()
 }
 #endif
 
+void lcd_func_reset_eeprom(void)
+{
+	bool yesno = lcd_show_fullscreen_message_yes_no_and_wait_P(_i("Wipe EEPROM?"), false);////MSG_CRASH_RESUME c=20 r=3
+	if(yesno)
+	{
+		enquecommand_P(PSTR("M502\nM500\n"));
+	}
+}
+
+void lcd_func_reset_factory(void)
+{
+	bool yesno = lcd_show_fullscreen_message_yes_no_and_wait_P(_i("Reset to factory settings?"), false);////MSG_CRASH_RESUME c=20 r=3
+	if(yesno)
+	{
+		if(farm_mode)
+			enquecommand_P(PSTR("G98 PRUSA FR\nG99\n"));
+		else
+			enquecommand_P(PSTR("G98\nG98 PRUSA FR\nG99\n"));
+	}
+}
+
 void lcd_hw_setup_menu(void)                      // can not be "static"
 {
     typedef struct
@@ -5681,6 +5702,9 @@ void lcd_hw_setup_menu(void)                      // can not be "static"
 	//! This menu allows the user to en-/disable the SuperPINDA manualy
 	MENU_ITEM_TOGGLE_P(_N("SuperPINDA"), eeprom_read_byte((uint8_t *)EEPROM_PINDA_TEMP_COMPENSATION) ? _T(MSG_YES) : _T(MSG_NO), lcd_pinda_temp_compensation_toggle);
 #endif //PINDA_TEMP_COMP
+
+	MENU_ITEM_FUNCTION_P(_i("Reset EEPROM"), lcd_func_reset_eeprom);
+	MENU_ITEM_FUNCTION_P(_i("Factory reset"), lcd_func_reset_factory);
 
     MENU_END();
 }
@@ -7542,6 +7566,10 @@ bool lcd_selftest()
 #ifdef TMC2130
 		homeaxis(Z_AXIS); //In case of failure, the code gets stuck in this function.
 #else
+		current_position[X_AXIS] = pgm_read_float(bed_ref_points_4);
+		current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4+1);
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
         _result = lcd_selfcheck_axis(Z_AXIS, Z_MAX_POS);
 #endif //TMC2130
 
@@ -7787,10 +7815,20 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 	int _lcd_refresh = 0;
 	_travel = _travel + (_travel / 10);
 
+#ifdef TMC2130
 	if (_axis == X_AXIS) {
 		current_position[Z_AXIS] += 17;
 		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
 	}
+#else
+	if (_axis == X_AXIS) {
+		current_position[Z_AXIS] += 10;
+		current_position[Y_AXIS] += 10;
+		plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+		st_synchronize();
+		_delay(1000);
+	}
+#endif
 
 	do {
 		current_position[_axis] = current_position[_axis] - 1;
@@ -7799,11 +7837,6 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 		st_synchronize();
 #ifdef TMC2130
 		if ((READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-#else //TMC2130
-		if ((READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING) ||
-			(READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING) ||
-			(READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
-#endif //TMC2130
 		{
 			if (_axis == 0)
 			{
@@ -7828,6 +7861,32 @@ static bool lcd_selfcheck_axis(int _axis, int _travel)
 			}
 			_stepdone = true;
 		}
+#else //TMC2130
+		if ((_axis == 0) && (READ(X_MIN_PIN) ^ (bool)X_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? 1 : 2;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis X %d, %d\n"), _stepresult, _err_endstop);
+		}
+		if ((_axis == 1) && (READ(Y_MIN_PIN) ^ (bool)Y_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 2;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis Y %d, %d\n"), _stepresult, _err_endstop);
+		}
+		if ((_axis == 2) && (READ(Z_MIN_PIN) ^ (bool)Z_MIN_ENDSTOP_INVERTING))
+		{
+			_stepresult = ((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING) == 1) ? true : false;
+			_err_endstop = ((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING) == 1) ? 0 : 1;
+			_stepdone = true;
+			printf_P(PSTR("lcd_selfcheck_axis Z %d, %d\n"), _stepresult, _err_endstop);
+			/*disable_x();
+			disable_y();
+			disable_z();*/
+		}
+#endif //TMC2130
 
 		if (_lcd_refresh < 6)
 		{
@@ -7954,6 +8013,18 @@ static bool lcd_selfcheck_pulleys(int axis)
 static bool lcd_selfcheck_endstops()
 {
 	bool _result = true;
+
+#ifndef TMC2130
+	bool endstops = enable_endstops(false);
+	current_position[X_AXIS] += 15;
+	current_position[Y_AXIS] += 15;
+	current_position[Z_AXIS] += 15;
+
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+	enable_endstops(endstops);
+#endif
 
 	if (
 	#ifndef TMC2130

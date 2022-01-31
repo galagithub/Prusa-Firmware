@@ -6,6 +6,13 @@ So far, this was added:
 - MK3 Einsy controller fitted on MK2.5 printer HW (MK3-12V)
 - Custom MK2S printer win P3Steel frame, MK42 bed and MKS Base v1.3 controller (Orballo MK2S)
 
+# History
+- initial: ported most things from MKx_COMPAT_3.9.1
+- add "setSN.py" to set the serial number of the board
+
+# End of Compatible Prusa firmware section
+<!--te-->
+
 # Prusa Firmware MK3
 
 This repository contains the source code and the development versions of the firmware running on the [Original Prusa i3](https://prusa3d.com/) MK3S/MK3/MK2.5S/MK2.5 line of printers.
