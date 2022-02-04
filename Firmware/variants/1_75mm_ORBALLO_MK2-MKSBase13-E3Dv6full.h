@@ -458,6 +458,7 @@ THERMISTORS SETTINGS
 #define BUTTON_BLANKING_TIME 200 //time in ms for blanking after button release
 
 #define DEFAULT_PID_TEMP 210
+#define DEFAULT_PID_BED_TEMP 50
 
 
 #define END_FILE_SECTION 20000 //number of bytes from end of file used for checking if file is complete
@@ -478,3 +479,4 @@ THERMISTORS SETTINGS
 #define MMU_IDLER_SENSOR_ATTEMPTS_NR 21 //max. number of attempts to load filament if first load failed; value for max bowden length and case when loading fails right at the beginning
 
 #endif //__CONFIGURATION_PRUSA_H
+

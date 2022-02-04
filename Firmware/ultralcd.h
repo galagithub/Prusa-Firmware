@@ -107,6 +107,9 @@ enum class LcdCommands : uint_least8_t
 	FarmModeConfirm,
 	LongPause,
 	PidExtruder,
+#ifdef PIDTEMPBED
+    PidBed,
+#endif
 	Layer1Cal,
 };
 

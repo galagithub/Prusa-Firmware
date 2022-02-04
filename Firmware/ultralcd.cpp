@@ -90,6 +90,13 @@ bool printer_connected = true;
 unsigned long display_time; //just timer for showing pid finished message on lcd;
 float pid_temp = DEFAULT_PID_TEMP;
 
+#ifdef PIDTEMPBED
+#ifndef DEFAULT_PID_BED_TEMP
+#define DEFAULT_PID_BED_TEMP 60
+#endif
+float pid_bed_temp = DEFAULT_PID_BED_TEMP;
+#endif
+
 static bool forceMenuExpire = false;
 static bool lcd_autoDeplete;
 
@@ -461,8 +468,8 @@ void lcdui_print_percent_done(void)
 {
 	const char* src = is_usb_printing?_N("USB"):(IS_SD_PRINTING?_N(" SD"):_N("   "));
 	char per[4];
-#ifdef STEEL_SHEET
 	bool num = IS_SD_PRINTING || (PRINTER_ACTIVE && (print_percent_done_normal != PRINT_PERCENT_DONE_INIT));
+#ifdef STEEL_SHEET
 	if (!num || heating_status) // either not printing or heating
 	{
 		const int8_t sheetNR = eeprom_read_byte(&(EEPROM_Sheets_base->active_sheet));
@@ -1362,6 +1369,54 @@ void lcd_commands()
 			lcd_commands_type = LcdCommands::Idle;
 		}
 	}
+#ifdef PIDTEMPBED
+	if (lcd_commands_type == LcdCommands::PidBed) {
+		char cmd1[30];
+		
+		if (lcd_commands_step == 0) {
+			custom_message_type = CustomMsg::PidCal;
+			custom_message_state = 1;
+			lcd_draw_update = 3;
+			lcd_commands_step = 3;
+		}
+		if (lcd_commands_step == 3 && !blocks_queued()) { //PID calibration
+			strcpy(cmd1, "M303 E-1 S");
+			strcat(cmd1, ftostr3(pid_bed_temp));
+			// setting the correct target temperature (for visualization) is done in PID_autotune
+			enquecommand(cmd1);
+			lcd_setstatuspgm(_i("PID Bed cal."));////MSG_PID_RUNNING c=20
+			lcd_commands_step = 2;
+		}
+		if (lcd_commands_step == 2 && pid_tuning_finished) { //saving to eeprom
+			pid_tuning_finished = false;
+			custom_message_state = 0;
+			lcd_setstatuspgm(_i("PID Bed cal. done"));////MSG_PID_FINISHED c=20
+			setTargetBed(0);  // reset all hotends temperature including the number displayed on the main screen
+			if (_Kp != 0 || _Ki != 0 || _Kd != 0) {
+			strcpy(cmd1, "M304 P");
+			strcat(cmd1, ftostr32(_Kp));
+			strcat(cmd1, " I");
+			strcat(cmd1, ftostr32(_Ki));
+			strcat(cmd1, " D");
+			strcat(cmd1, ftostr32(_Kd));
+			enquecommand(cmd1);
+			enquecommand_P(PSTR("M500"));
+			}
+			else {
+				SERIAL_ECHOPGM("Invalid PID Bed cal. results. Not stored to EEPROM.");
+			}
+			display_time = _millis();
+			lcd_commands_step = 1;
+		}
+		if ((lcd_commands_step == 1) && ((_millis()- display_time)>2000)) { //calibration finished message
+			lcd_setstatuspgm(_T(WELCOME_MSG));
+			custom_message_type = CustomMsg::Status;
+			pid_bed_temp = DEFAULT_PID_BED_TEMP;
+			lcd_commands_step = 0;
+			lcd_commands_type = LcdCommands::Idle;
+		}
+	}
+#endif
 
 
 }
@@ -3164,6 +3219,27 @@ void pid_extruder()
 	}
 
 }
+
+#ifdef PIDTEMPBED
+void pid_bed()
+{
+	lcd_clear();
+	lcd_puts_at_P(0, 0, _i("Set temperature:"));////MSG_SET_TEMPERATURE
+	pid_bed_temp += int(lcd_encoder);
+	if (pid_bed_temp > BED_MAXTEMP) pid_bed_temp = BED_MAXTEMP;
+	if (pid_bed_temp < BED_MINTEMP) pid_bed_temp = BED_MINTEMP;
+	lcd_encoder = 0;
+	lcd_set_cursor(1, 2);
+	lcd_print(ftostr3(pid_bed_temp));
+	if (lcd_clicked()) {
+		lcd_commands_type = LcdCommands::PidBed;
+		lcd_return_to_status();
+		lcd_update(2);
+	}
+
+}
+#endif
+
 /*
 void lcd_adjust_z() {
   int enc_dif = 0;
@@ -4573,8 +4649,7 @@ void lcd_calibrate_pinda() {
 	}
 	else
 	{
-        lcd_show_fullscreen_message_and_wait_P(_i("Unload filament before PINDA temperature calibration!"));}////MSG_MK3S_FIRMWARE_ON_MK3 c=20 r=4
-
+        lcd_show_fullscreen_message_and_wait_P(_i("Unload filament before PINDA temperature calibration!"));////MSG_MK3S_FIRMWARE_ON_MK3 c=20 r=4
 	}
 }
 
@@ -5872,6 +5947,9 @@ static void lcd_calibration_menu()
 
     MENU_ITEM_SUBMENU_P(_i("Bed level correct"), lcd_adjust_bed);////MSG_BED_CORRECTION_MENU c=18
 	MENU_ITEM_SUBMENU_P(_i("PID calibration"), pid_extruder);////MSG_PID_EXTRUDER c=17
+#ifdef PIDTEMPBED
+	MENU_ITEM_SUBMENU_P(_i("PID Bed cal."), pid_bed);////MSG_PID_EXTRUDER c=17
+#endif
 #ifndef TMC2130
     MENU_ITEM_SUBMENU_P(_i("Show end stops"), menu_show_end_stops);////MSG_SHOW_END_STOPS c=18
 #endif
