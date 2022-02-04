@@ -146,6 +146,8 @@ static void mmu_fil_eject_menu();
 static void mmu_load_to_nozzle_menu();
 static void preheat_or_continue();
 
+static void lcd_troubleshoot_menu();
+
 #ifdef MMU_HAS_CUTTER
 static void mmu_cut_filament_menu();
 #endif //MMU_HAS_CUTTER
@@ -1982,6 +1984,8 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(_n("forum.prusa3d.com"));////MSG_PRUSA3D_FORUM c=18
   MENU_ITEM_BACK_P(_n("howto.prusa3d.com"));////MSG_PRUSA3D_HOWTO c=18
   MENU_ITEM_BACK_P(STR_SEPARATOR);
+  MENU_ITEM_BACK_P(_n("Compatible printer"));////MSG_PRUSA3D_HOWTO c=18
+  MENU_ITEM_BACK_P(STR_SEPARATOR);
   MENU_ITEM_BACK_P(PSTR(FILAMENT_SIZE));
   MENU_ITEM_BACK_P(PSTR(ELECTRONICS));
   MENU_ITEM_BACK_P(PSTR(NOZZLE_TYPE));
@@ -1995,6 +1999,7 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(FsensorIRVersionText());
 #endif // IR_SENSOR_ANALOG
 
+#ifndef PRINTER_MMU_DISABLE
 	MENU_ITEM_BACK_P(STR_SEPARATOR);
 	if (mmu_enabled)
 	{
@@ -2011,7 +2016,7 @@ static void lcd_support_menu()
 	}
 	else
 		MENU_ITEM_BACK_P(PSTR("MMU2       N/A"));
-
+#endif
 
   // Show the FlashAir IP address, if the card is available.
   if (_md->is_flash_air) {
@@ -2072,6 +2077,9 @@ static void lcd_support_menu()
 #endif //EMERGENCY_HANDLERS
   MENU_ITEM_SUBMENU_P(PSTR("Debug"), lcd_menu_debug);////MSG_DEBUG c=18
 #endif /* DEBUG_BUILD */
+
+
+	MENU_ITEM_SUBMENU_P(_i("Troubleshoot"), lcd_troubleshoot_menu);
 
   #endif //MK1BP
 
@@ -5633,10 +5641,14 @@ static void sheets_menu()
 
 void lcd_func_reset_eeprom(void)
 {
+	Sound_MakeSound(e_SOUND_TYPE_StandardPrompt);
 	bool yesno = lcd_show_fullscreen_message_yes_no_and_wait_P(_i("Wipe EEPROM?"), false);////MSG_CRASH_RESUME c=20 r=3
 	if(yesno)
 	{
-		enquecommand_P(PSTR("M502\nM500\n"));
+		enquecommand_P(PSTR("M502\n"));
+		Sound_MakeSound(e_SOUND_TYPE_StandardAlert);
+		_delay(1000);
+		enquecommand_P(PSTR("M500\n"));
 	}
 }
 
@@ -5645,10 +5657,12 @@ void lcd_func_reset_factory(void)
 	bool yesno = lcd_show_fullscreen_message_yes_no_and_wait_P(_i("Reset to factory settings?"), false);////MSG_CRASH_RESUME c=20 r=3
 	if(yesno)
 	{
-		if(farm_mode)
-			enquecommand_P(PSTR("G98 PRUSA FR\nG99\n"));
-		else
-			enquecommand_P(PSTR("G98\nG98 PRUSA FR\nG99\n"));
+		enquecommand_P(PSTR("G98\n"));
+		_delay(1000);
+		enquecommand_P(PSTR("G98 PRUSA FR\n"));
+		Sound_MakeSound(e_SOUND_TYPE_StandardAlert);
+		_delay(1000);
+		enquecommand_P(PSTR("G99\n"));
 	}
 }
 
@@ -9109,3 +9123,183 @@ void lcd_pinda_temp_compensation_toggle()
 	SERIAL_ECHOLN(pinda_temp_compensation);
 }
 #endif //PINDA_TEMP_COMP
+
+#ifndef HEATBEAD_V2
+/*
+static const float y0 = MESH_MIN_Y;
+static const float y1 = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y);
+static const float y2 = MESH_MAX_Y;
+
+static const float x0 = MESH_MIN_X;
+static const float x1 = 0.5f * float(MESH_MIN_X + MESH_MAX_X);
+static const float x2 = MESH_MAX_X;
+*/
+
+static void mbl_cal_row1_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MIN_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+
+static void mbl_cal_row2_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y)-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col1()
+{
+    current_position[X_AXIS] = MESH_MIN_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MAX_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+static void mbl_cal_row1_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X)-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MIN_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row2_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X)-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y)-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col2()
+{
+    current_position[X_AXIS] = 0.5f * float(MESH_MIN_X + MESH_MAX_X)-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MAX_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+static void mbl_cal_row1_col3()
+{
+    current_position[X_AXIS] = MESH_MAX_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MIN_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row2_col3()
+{
+    current_position[X_AXIS] = MESH_MAX_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = 0.5f * float(MESH_MIN_Y + MESH_MAX_Y)-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void mbl_cal_row3_col3()
+{
+    current_position[X_AXIS] = MESH_MAX_X-(X_PROBE_OFFSET_FROM_EXTRUDER);
+	current_position[Y_AXIS] = MESH_MAX_Y-(Y_PROBE_OFFSET_FROM_EXTRUDER);
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+
+static void xyz_cal_point1()
+{
+    current_position[X_AXIS] = bed_ref_points_4[0];
+	current_position[Y_AXIS] = bed_ref_points_4[1];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point2()
+{
+    current_position[X_AXIS] = bed_ref_points_4[2];
+	current_position[Y_AXIS] = bed_ref_points_4[3];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point3()
+{
+    current_position[X_AXIS] = bed_ref_points_4[4];
+	current_position[Y_AXIS] = bed_ref_points_4[5];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void xyz_cal_point4()
+{
+    current_position[X_AXIS] = bed_ref_points_4[6];
+	current_position[Y_AXIS] = bed_ref_points_4[7];
+	plan_buffer_line_curposXYZE(manual_feedrate[0] / 60);
+	st_synchronize();
+	_delay(100);
+}
+
+static void lcd_mbl_cal_points_menu()
+{
+  enquecommand_P(PSTR("M17 X Y Z"));
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_i("Troubleshoot"));
+  	// Column 1
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 1"),mbl_cal_row1_col1);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 1"),mbl_cal_row2_col1);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 1"),mbl_cal_row3_col1);
+	// Column 2
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 2"),mbl_cal_row1_col2);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 2"),mbl_cal_row2_col2);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 2"),mbl_cal_row3_col2);
+	// Column 3
+	MENU_ITEM_FUNCTION_P(_i("Row 1 Column 3"),mbl_cal_row1_col3);
+	MENU_ITEM_FUNCTION_P(_i("Row 2 Column 3"),mbl_cal_row2_col3);
+	MENU_ITEM_FUNCTION_P(_i("Row 3 Column 3"),mbl_cal_row3_col3);
+  MENU_END();
+}
+
+static void lcd_xyz_cal_points_menu()
+{
+  enquecommand_P(PSTR("M17 X Y Z"));
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_i("Troubleshoot"));
+	MENU_ITEM_FUNCTION_P(_i("Point 1"),xyz_cal_point1);
+	MENU_ITEM_FUNCTION_P(_i("Point 2"),xyz_cal_point2);
+	MENU_ITEM_FUNCTION_P(_i("Point 3"),xyz_cal_point3);
+	MENU_ITEM_FUNCTION_P(_i("Point 4"),xyz_cal_point4);
+  MENU_END();
+}
+#endif
+
+static void lcd_troubleshoot_menu()
+{
+  MENU_BEGIN();
+  MENU_ITEM_BACK_P(_T(MSG_MAIN));
+  if (!isPrintPaused)
+  {
+	MENU_ITEM_GCODE_P(_i("Home X"), PSTR("G28 X"));
+	MENU_ITEM_GCODE_P(_i("Home Y"), PSTR("G28 Y"));
+	MENU_ITEM_GCODE_P(_i("Home Z"), PSTR("G28 Z"));
+#ifndef HEATBED_V2
+	MENU_ITEM_SUBMENU_P(_i("MBL Mesh Points"), lcd_mbl_cal_points_menu);
+	MENU_ITEM_SUBMENU_P(_i("Bed XYZ Cal. Points"), lcd_xyz_cal_points_menu);
+#endif
+	MENU_ITEM_GCODE_P(_i("Load defaults"), PSTR("M502"));
+	MENU_ITEM_GCODE_P(_i("Store settings"), PSTR("M500"));
+  }
+  MENU_END();
+}

@@ -131,7 +131,8 @@
 #define WATCHDOG
 
 // Power panic
-#define UVLO_SUPPORT
+//#define UVLO_SUPPORT
+// disabled since we are running on MK2.5S frame
 
 // Fan check
 #define FANCHECK

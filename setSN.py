@@ -20,13 +20,16 @@ try:
     ser.open()  # open serial port
     if ser.is_open:
         print("Looking for invalid SN start ....")
-        line = ser.readline()
-        print(line)
-        if line.startwith(";S"):
+        bline = ser.readline()
+        print(bline)
+        line = bline.decode("utf-8")
+        if line.startswith(";S"):
             ser.write(serialNumber)
             print("SN was set to ",serialNumber)
         else:
             print("Could not find Prusa SN write prompt!")
         ser.close()
-except:
-    print("Could not open port! SN write aborted...")
+except Exception as e:
+    print("Exception was: ",e)
+    pass
+#    print("Could not open port! SN write aborted...")

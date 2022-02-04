@@ -5401,11 +5401,11 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         float zero_z;
         int z_shift = 0; //unit: steps
         float start_temp = 5 * (int)(current_temperature_pinda / 5);
-        if (start_temp < 35) start_temp = 35;
+        //if (start_temp < 35) start_temp = 35;
         if (start_temp < current_temperature_pinda) start_temp += 5;
         printf_P(_N("start temperature: %.1f\n"), start_temp);
 
-//			setTargetHotend(200, 0);
+  			setTargetHotend(150 + (start_temp - 30), 0);
         setTargetBed(70 + (start_temp - 30));
 
         custom_message_type = CustomMsg::TempCal;
@@ -5459,7 +5459,7 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
             printf_P(_N("\nStep: %d/6\n"), i + 2);
             custom_message_state = i + 2;
             setTargetBed(50 + 10 * (temp - 30) / 5);
-//				setTargetHotend(255, 0);
+    				setTargetHotend(150 + 10 * (temp - 30) / 5, 0);
             current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
             plan_buffer_line_curposXYZE(3000 / 60);
             current_position[X_AXIS] = PINDA_PREHEAT_X;
