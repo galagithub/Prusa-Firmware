@@ -5456,10 +5456,10 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
         for (i++; i < 5; i++)
         {
             float temp = (40 + i * 5);
-            printf_P(_N("\nStep: %d/6\n"), i + 2);
+            printf_P(_N("\nStep: %d/6\nWaiting for PINDA to reach %.1f degreeds Celsius..."), i + 2, temp);
             custom_message_state = i + 2;
             setTargetBed(50 + 10 * (temp - 30) / 5);
-    				setTargetHotend(150 + 10 * (temp - 30) / 5, 0);
+    				setTargetHotend(155 + 10 * (temp - 30) / 5, 0);
             current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
             plan_buffer_line_curposXYZE(3000 / 60);
             current_position[X_AXIS] = PINDA_PREHEAT_X;

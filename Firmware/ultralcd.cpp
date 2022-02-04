@@ -461,6 +461,7 @@ void lcdui_print_percent_done(void)
 {
 	const char* src = is_usb_printing?_N("USB"):(IS_SD_PRINTING?_N(" SD"):_N("   "));
 	char per[4];
+#ifdef STEEL_SHEET
 	bool num = IS_SD_PRINTING || (PRINTER_ACTIVE && (print_percent_done_normal != PRINT_PERCENT_DONE_INIT));
 	if (!num || heating_status) // either not printing or heating
 	{
@@ -475,6 +476,7 @@ void lcdui_print_percent_done(void)
 			return; //do not also print the percentage
 		}
 	}
+#endif
 	sprintf_P(per, num?_N("%3hhd"):_N("---"), calc_percent_done());
 	lcd_printf_P(_N("%3S%3s%%"), src, per);
 }
@@ -1984,7 +1986,7 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(_n("forum.prusa3d.com"));////MSG_PRUSA3D_FORUM c=18
   MENU_ITEM_BACK_P(_n("howto.prusa3d.com"));////MSG_PRUSA3D_HOWTO c=18
   MENU_ITEM_BACK_P(STR_SEPARATOR);
-  MENU_ITEM_BACK_P(_n("Compatible printer"));////MSG_PRUSA3D_HOWTO c=18
+  MENU_ITEM_BACK_P(_n("Compat. " PRINTER_NAME));////MSG_PRUSA3D_HOWTO c=18
   MENU_ITEM_BACK_P(STR_SEPARATOR);
   MENU_ITEM_BACK_P(PSTR(FILAMENT_SIZE));
   MENU_ITEM_BACK_P(PSTR(ELECTRONICS));
@@ -4562,8 +4564,18 @@ void lcd_second_serial_set() {
 #endif //HAS_SECOND_SERIAL_PORT
 
 void lcd_calibrate_pinda() {
-	enquecommand_P(PSTR("G76"));
-	lcd_return_to_status();
+	Sound_MakeSound(e_SOUND_TYPE_StandardPrompt);
+	bool yesno = lcd_show_fullscreen_message_yes_no_and_wait_P(_i("Is filament loaded?"), true);////MSG_CRASH_RESUME c=20 r=3
+	if(!yesno)
+	{
+		enquecommand_P(PSTR("G76"));
+		lcd_return_to_status();
+	}
+	else
+	{
+        lcd_show_fullscreen_message_and_wait_P(_i("Unload filament before PINDA temperature calibration!"));}////MSG_MK3S_FIRMWARE_ON_MK3 c=20 r=4
+
+	}
 }
 
 #ifndef SNMM
@@ -4964,7 +4976,7 @@ void lcd_wizard(WizState state)
 			else end = true;
 			break;
 		case S::Xyz:
-			lcd_show_fullscreen_message_and_wait_P(_i("I will run xyz calibration now. It will take approx. 12 mins."));////MSG_WIZARD_XYZ_CAL c=20 r=8
+			lcd_show_fullscreen_message_and_wait_P(_i("I will run xyz calibration now. It will take approx. 45 mins."));////MSG_WIZARD_XYZ_CAL c=20 r=8
 			wizard_event = gcode_M45(false, 0);
 			if (wizard_event) state = S::IsFil;
 			else end = true;
