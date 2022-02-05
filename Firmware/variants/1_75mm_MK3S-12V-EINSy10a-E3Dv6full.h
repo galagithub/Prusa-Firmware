@@ -130,7 +130,8 @@
 #define WATCHDOG
 
 // Power panic
-#define UVLO_SUPPORT
+//#define UVLO_SUPPORT
+// MK3 firmware on MK2.5 frame !
 
 // Fan check
 #define FANCHECK

@@ -2158,7 +2158,7 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(_i("howto.prusa3d.com"));////MSG_PRUSA3D_HOWTO
   MENU_ITEM_BACK_P(STR_SEPARATOR);
 //#if !defined(PRINTER_MK2)&&!defined(PRINTER_MK2S)&&!defined(PRINTER_MK25)&&!defined(PRINTER_MK25S)&&!defined(PRINTER_MK3)&&!defined(PRINTER_MK3S)
-  MENU_ITEM_BACK_P(_i("Compatible printer"));////clone or compatible printer
+  MENU_ITEM_BACK_P(_i("Compatible " PRINTER_NAME));////clone or compatible printer
   MENU_ITEM_BACK_P(STR_SEPARATOR);
 //#endif
   MENU_ITEM_BACK_P(PSTR(FILAMENT_SIZE));
@@ -2174,6 +2174,7 @@ static void lcd_support_menu()
   MENU_ITEM_BACK_P(FsensorIRVersionText());
 #endif // IR_SENSOR_ANALOG
 
+#ifndef PRINTER_MMU_DISABLE
 	MENU_ITEM_BACK_P(STR_SEPARATOR);
 	if (mmu_enabled)
 	{
@@ -2190,7 +2191,7 @@ static void lcd_support_menu()
 	}
 	else
 		MENU_ITEM_BACK_P(PSTR("MMU2       N/A"));
-
+#endif
 
   // Show the FlashAir IP address, if the card is available.
   if (_md->is_flash_air) {
@@ -2215,10 +2216,13 @@ static void lcd_support_menu()
   MENU_ITEM_SUBMENU_P(_i("Voltages"), lcd_menu_voltages);////MSG_MENU_VOLTAGES c=18 r=1
 #endif //defined VOLT_BED_PIN || defined VOLT_PWR_PIN
 
+    MENU_ITEM_SUBMENU_P(_i("Troubleshoot"), lcd_troubleshoot_menu);
 
 #ifdef DEBUG_BUILD
   MENU_ITEM_SUBMENU_P(PSTR("Debug"), lcd_menu_debug);////c=18 r=1
 #endif /* DEBUG_BUILD */
+
+  MENU_ITEM_BACK_P(STR_SEPARATOR);
 
   #endif //MK1BP
 
@@ -7199,7 +7203,6 @@ static void lcd_main_menu()
 	}
 	MENU_ITEM_SUBMENU_P(_T(MSG_SETTINGS), lcd_settings_menu);
     if(!isPrintPaused) MENU_ITEM_SUBMENU_P(_T(MSG_MENU_CALIBRATION), lcd_calibration_menu);
-    MENU_ITEM_SUBMENU_P(_i("Troubleshoot"), lcd_troubleshoot_menu);
 
   }
   

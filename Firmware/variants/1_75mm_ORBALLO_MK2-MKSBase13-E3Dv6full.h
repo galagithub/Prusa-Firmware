@@ -43,8 +43,8 @@ AXIS SETTINGS
 // X,Y 20 teeth
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,3200/8,140}
 #else
-// X 16 theeth,Y 20 teeth
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {100,80,3200/8,161.3}
+// X,Y 20 teeth
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,3200/8,161.3}
 #endif
 
 
@@ -64,8 +64,7 @@ AXIS SETTINGS
 
 // Home position
 #define MANUAL_X_HOME_POS -3.0
-//#define MANUAL_Y_HOME_POS -2.2
-#define MANUAL_Y_HOME_POS 0
+#define MANUAL_Y_HOME_POS -5
 #define MANUAL_Z_HOME_POS 0.15
 
 // Travel limits after homing
@@ -199,6 +198,10 @@ CHANGE FILAMENT SETTINGS
 /*------------------------------------
 ADDITIONAL FEATURES SETTINGS
 *------------------------------------*/
+
+// Filament sensor
+#define FILAMENT_SENSOR
+#define IR_SENSOR
 
 // Define Prusa filament runout sensor
 //#define FILAMENT_RUNOUT_SUPPORT
