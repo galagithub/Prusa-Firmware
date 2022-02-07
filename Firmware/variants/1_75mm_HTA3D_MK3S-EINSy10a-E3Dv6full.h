@@ -19,7 +19,7 @@
 #define DEVELOPER
 
 // Printer name
-#define CUSTOM_MENDEL_NAME "Prusa i3 MK3S 12V"
+#define CUSTOM_MENDEL_NAME "HTA3D MK3S"
 
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
@@ -28,7 +28,7 @@
 
 // PSU
 //#define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
-// MK2.5 hardware used, no Delta PSU there
+// RAMPS board used
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
@@ -43,7 +43,8 @@
  *------------------------------------*/
 
 // Steps per unit {X,Y,Z,E}
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {100,100,3200/8,266}
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80,3200/8,266}
+
 
 // Endstop inverting
 #define X_MIN_ENDSTOP_INVERTING 0 // set to 1 to invert the logic of the endstop.
@@ -64,9 +65,9 @@
 #define MANUAL_Z_HOME_POS 0.2
 
 // Travel limits after homing
-#define X_MAX_POS 250
+#define X_MAX_POS 220
 #define X_MIN_POS 0
-#define Y_MAX_POS 210
+#define Y_MAX_POS 220
 #define Y_MIN_POS -4 //orig -4
 #define Z_MAX_POS 210
 #define Z_MIN_POS 0.15
