@@ -4604,11 +4604,13 @@ void lcd_mesh_bedleveling()
 	lcd_return_to_status();
 }
 
+#ifndef FULL_ALUMINUM_BED
 void lcd_mesh_calibration()
 {
   enquecommand_P(PSTR("M45"));
   lcd_return_to_status();
 }
+#endif
 
 void lcd_mesh_calibration_z()
 {
@@ -5045,17 +5047,24 @@ void lcd_wizard(WizState state)
 			lcd_show_fullscreen_message_and_wait_P(_i("First, I will run the selftest to check most common assembly problems."));////MSG_WIZARD_SELFTEST c=20 r=8
 			wizard_event = lcd_selftest();
 			if (wizard_event) {
+#ifndef FULL_ALUMINUM_BED
 				calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
 				state = S::Xyz;
+#else
+				calibration_status_store(CALIBRATION_STATUS_Z_CALIBRATION);
+				state = S::Z;
+#endif // not FULL_ALUMINUM_BED
 			}
 			else end = true;
 			break;
+#ifndef FULL_ALUMINUM_BED
 		case S::Xyz:
 			lcd_show_fullscreen_message_and_wait_P(_i("I will run xyz calibration now. It will take approx. 45 mins."));////MSG_WIZARD_XYZ_CAL c=20 r=8
 			wizard_event = gcode_M45(false, 0);
 			if (wizard_event) state = S::IsFil;
 			else end = true;
 			break;
+#endif // not FULL_ALUMINUM_BED
 		case S::Z:
 			lcd_show_fullscreen_message_and_wait_P(_i("Please remove shipping helpers first."));////MSG_REMOVE_SHIPPING_HELPERS c=20 r=3
 #ifdef STEEL_SHEET
@@ -5934,7 +5943,9 @@ static void lcd_calibration_menu()
     MENU_ITEM_GCODE_P(_T(MSG_HOMEYZ), PSTR("G28 Z"));
 #else //MK1BP
     // MK2
+#ifndef FULL_ALUMINUM_BED
     MENU_ITEM_FUNCTION_P(_i("Calibrate XYZ"), lcd_mesh_calibration);////MSG_CALIBRATE_BED c=18
+#endif
     // "Calibrate Z" with storing the reference values to EEPROM.
     MENU_ITEM_SUBMENU_P(_T(MSG_HOMEYZ), lcd_mesh_calibration_z);
 #ifndef SNMM

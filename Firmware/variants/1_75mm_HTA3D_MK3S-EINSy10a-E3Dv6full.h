@@ -124,8 +124,9 @@
 #define CRASHDET_TIMER 45 //seconds
 #define CRASHDET_COUNTER_MAX 3 
 
-// New XYZ calibration
-#define NEW_XYZCAL
+// No XYZ calibration can be done due to the fact that the whole bed is metal
+//#define NEW_XYZCAL // must be defined with HEATBED_V2
+#define FULL_ALUMINUM_BED
 
 // Watchdog support
 #define WATCHDOG
@@ -662,7 +663,7 @@
 // If power panic occured, and the current temperature is higher then target temperature before interrupt minus this offset, print will be recovered automatically.
 #define AUTOMATIC_UVLO_BED_TEMP_OFFSET 5 
 
-#define HEATBED_V2
+//#define HEATBED_V2
 
 #define M600_TIMEOUT 600  //seconds
 

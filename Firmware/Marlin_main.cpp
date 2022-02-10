@@ -3518,7 +3518,7 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level)
 	home_xy();
 
 	enable_endstops(false);
-#ifdef HEATBED_V2
+#if defined(HEATBED_V2) || defined(FULL_ALUMINUM_BED)
 	current_position[X_AXIS] += 5;
 	current_position[Y_AXIS] += 5;
 #else
@@ -6173,7 +6173,13 @@ if(eSoundMode!=e_SOUND_MODE_SILENT)
     case 45: // M45: Prusa3D: bed skew and offset with manual Z up
     {
 		int8_t verbosity_level = 0;
+#ifndef FULL_ALUMINUM_BED
 		bool only_Z = code_seen('Z');
+#else
+    bool only_Z = true;
+    if (!code_seen('Z'))
+      SERIAL_PROTOCOLPGM("XYZ calibration not supported on aluminum bed! Forced Z parameter!\n");          
+#endif
 		#ifdef SUPPORT_VERBOSITY
 		if (code_seen('V'))
 		{
