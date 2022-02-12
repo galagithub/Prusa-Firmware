@@ -148,9 +148,16 @@ FORCE_INLINE float degTargetBed() {
   return target_temperature_bed;
 };
 
+#if defined(HEATER_0_MAXTEMP) || defined(HEATER_1_MAXTEMP) || defined(HEATER_2_MAXTEMP)
+extern int maxttemp[EXTRUDERS];
+#endif
 // Doesn't save FLASH when FORCE_INLINE removed.
-FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder) {  
+FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder) { 
+#if defined(HEATER_0_MAXTEMP) || defined(HEATER_1_MAXTEMP) || defined(HEATER_2_MAXTEMP)
+      target_temperature[extruder] = (celsius<maxttemp[extruder]) ? celsius : maxttemp[extruder];
+#else 
   target_temperature[extruder] = celsius;
+#endif
   resetPID(extruder);
 };
 
@@ -158,7 +165,11 @@ FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder) {
 static inline void setTargetHotendSafe(const float &celsius, uint8_t extruder)
 {
     if (extruder<EXTRUDERS) {
+#if defined(HEATER_0_MAXTEMP) || defined(HEATER_1_MAXTEMP) || defined(HEATER_2_MAXTEMP)
+      target_temperature[extruder] = (celsius<maxttemp[extruder]) ? celsius : maxttemp[extruder];
+#else
       target_temperature[extruder] = celsius;
+#endif
       resetPID(extruder);
     }
 }
@@ -169,9 +180,16 @@ static inline void setAllTargetHotends(const float &celsius)
     for(int i=0;i<EXTRUDERS;i++) setTargetHotend(celsius,i);
 }
 
+#ifndef BED_MAXTEMP
 FORCE_INLINE void setTargetBed(const float &celsius) {  
   target_temperature_bed = celsius;
 };
+#else
+FORCE_INLINE void setTargetBed(const float &celsius) {  
+  // check if we are in range
+  target_temperature_bed = (celsius<BED_MAXTEMP) ? celsius : BED_MAXTEMP;
+};
+#endif
 
 FORCE_INLINE bool isHeatingHotend(uint8_t extruder){  
   return target_temperature[extruder] > current_temperature[extruder];
