@@ -5,10 +5,18 @@ So far, this was added:
 - MKS Base 1.3 board support (MMU not supported!)
 - MK3 Einsy controller fitted on MK2.5 printer HW (MK3-12V)
 - Custom MK2S printer win P3Steel frame, MK42 bed and MKS Base v1.3 controller (Orballo MK2S)
+- Fix against 999 degrees celsius
+- Fix MAXTEMP no used in lcd menus for Hotend or Bed
+
+# IMPORTANT FIX HERE:
+Prusa printers, and almos ANY marlin based printers can attempt to heat up to 999 degrees Celsius !!!!
+The branch here contains a fix for that.
 
 # History
 - initial: ported most things from MKx_COMPAT_3.9.1
 - add "setSN.py" to set the serial number of the board
+- Fix against 999 degrees celsius
+- Fix MAXTEMP no used in lcd menus for Hotend or Bed
 
 # End of Compatible Prusa firmware section
 <!--te-->
