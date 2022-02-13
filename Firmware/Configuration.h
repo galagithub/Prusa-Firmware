@@ -219,6 +219,20 @@ your extruder heater takes 2 minutes to hit the target on heating.
 //#define THERMAL_RUNAWAY_PROTECTION_BED_HYSTERESIS 2 // in degree Celsius
 //===========================================================================
 
+/*================== Maximum Temperature Overshoot ==============================
+When heating up to the maximum temperature we must allow for an overshoot or it
+or else we will hit the MAXTEMP error.
+
+Values are in degrees (absolute degrees).
+
+Define here the overshoot for each hotend and the bed.
+Keep these low for safety reasons !!!
+*/
+#define HEATER_0_TEMP_OVERSHOOT 4
+#define HEATER_1_TEMP_OVERSHOOT 4
+#define HEATER_2_TEMP_OVERSHOOT 4
+#define BED_TEMP_OVERSHOOT 2
+//===========================================================================
 
 //===========================================================================
 //=============================Mechanical Settings===========================

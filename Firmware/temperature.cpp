@@ -1148,8 +1148,11 @@ void tp_init()
   }
 #endif //MINTEMP
 #ifdef HEATER_0_MAXTEMP
+#ifndef HEATER_0_TEMP_OVERSHOOT
+#define HEATER_0_TEMP_OVERSHOOT 0
+#endif
   maxttemp[0] = HEATER_0_MAXTEMP;
-  while(analog2temp(maxttemp_raw[0], 0) > HEATER_0_MAXTEMP) {
+  while(analog2temp(maxttemp_raw[0], 0) > (HEATER_0_MAXTEMP + HEATER_0_TEMP_OVERSHOOT)) {
 #if HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP
     maxttemp_raw[0] -= OVERSAMPLENR;
 #else
@@ -1169,8 +1172,11 @@ void tp_init()
   }
 #endif // MINTEMP 1
 #if (EXTRUDERS > 1) && defined(HEATER_1_MAXTEMP)
+#ifndef HEATER_1_TEMP_OVERSHOOT
+#define HEATER_1_TEMP_OVERSHOOT 0
+#endif
   maxttemp[1] = HEATER_1_MAXTEMP;
-  while(analog2temp(maxttemp_raw[1], 1) > HEATER_1_MAXTEMP) {
+  while(analog2temp(maxttemp_raw[1], 1) > (HEATER_1_MAXTEMP + HEATER_1_TEMP_OVERSHOOT)) {
 #if HEATER_1_RAW_LO_TEMP < HEATER_1_RAW_HI_TEMP
     maxttemp_raw[1] -= OVERSAMPLENR;
 #else
@@ -1190,8 +1196,11 @@ void tp_init()
   }
 #endif //MINTEMP 2
 #if (EXTRUDERS > 2) && defined(HEATER_2_MAXTEMP)
+#ifndef HEATER_2_TEMP_OVERSHOOT
+#define HEATER_2_TEMP_OVERSHOOT 0
+#endif
   maxttemp[2] = HEATER_2_MAXTEMP;
-  while(analog2temp(maxttemp_raw[2], 2) > HEATER_2_MAXTEMP) {
+  while(analog2temp(maxttemp_raw[2], 2) > (HEATER_2_MAXTEMP + HEATER_2_TEMP_OVERSHOOT)) {
 #if HEATER_2_RAW_LO_TEMP < HEATER_2_RAW_HI_TEMP
     maxttemp_raw[2] -= OVERSAMPLENR;
 #else
@@ -1210,7 +1219,10 @@ void tp_init()
   }
 #endif //BED_MINTEMP
 #ifdef BED_MAXTEMP
-  while(analog2tempBed(bed_maxttemp_raw) > BED_MAXTEMP) {
+#ifndef BED_TEMP_OVERSHOOT
+#define BED_TEMP_OVERSHOOT 0
+#endif
+  while(analog2tempBed(bed_maxttemp_raw) > (BED_MAXTEMP + BED_TEMP_OVERSHOOT)) {
 #if HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP
     bed_maxttemp_raw -= OVERSAMPLENR;
 #else
